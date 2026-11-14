@@ -6,9 +6,9 @@ This document covers how [SPEC.md](SPEC.md) is built. The build order is in [PLA
 
 | Layer | Choice | Why |
 |---|---|---|
-| Frontend | React 18 + TypeScript, Vite, React Router, TanStack Query, Tailwind CSS | TanStack Query handles caching, loading and error states for every server read. Tailwind holds the Eneba design tokens in one config. |
-| Backend | Laravel 11 (PHP 8.3), REST/JSON, Sanctum | Auth, validation, migrations and testing are built in. Its structure is close to ASP.NET Core (controllers, DI container, middleware, migrations). |
-| Database | PostgreSQL 16 (Neon in production, Docker locally) | `pg_trgm` gives typo-tolerant search, and `FOR UPDATE SKIP LOCKED` gives safe key assignment. Neon's free tier does not expire, unlike Render's free Postgres, which is deleted after 30 days. |
+| Frontend | React 19 + TypeScript 7, Vite 8, React Router 8, TanStack Query 5, Tailwind CSS 4, oxlint | TanStack Query handles caching, loading and error states for every server read. Tailwind holds the Eneba design tokens in one `@theme` block in `src/index.css`. oxlint replaces ESLint because typescript-eslint does not support TypeScript 7. |
+| Backend | Laravel 13 (PHP 8.4), REST/JSON, Sanctum | Auth, validation, migrations and testing are built in. Its structure is close to ASP.NET Core (controllers, DI container, middleware, migrations). |
+| Database | PostgreSQL 16 on Neon (`main` branch in production, `dev` and `test` branches locally) | `pg_trgm` gives typo-tolerant search, and `FOR UPDATE SKIP LOCKED` gives safe key assignment. Neon's free tier does not expire, unlike Render's free Postgres, which is deleted after 30 days. |
 | Tests | Pest (backend), Vitest + Testing Library (frontend), Playwright (one end-to-end path) | Backend tests run against real Postgres, because SQLite has neither `pg_trgm` nor `SKIP LOCKED`. |
 | Hosting | Vercel (frontend), Render free web service in Docker (API), Neon free (database) | All free tier, as the assignment requires. |
 
@@ -40,8 +40,8 @@ The browser only ever talks to the Vercel origin, and Vercel proxies API calls t
   app/Services/           CheckoutService, ProductSearch, Homepage/…
   app/Services/Homepage/Providers/   one class per block type
   database/migrations, database/seeders, tests/
-docker-compose.yml        local Postgres 16
-.github/workflows/ci.yml
+docker-compose.yml        local Postgres 16 (deferred: local work uses Neon branches)
+.github/workflows/ci.yml  (deferred)
 docs/
 ```
 
@@ -212,13 +212,13 @@ The cart lives in localStorage as `[{offerId, quantity}]`. The client never send
 
 | Piece | Setup |
 |---|---|
-| **Neon** | Free project with Postgres 16. `CREATE EXTENSION pg_trgm` runs in a migration. The app uses the **direct (non-pooled)** connection string with `sslmode=require`. At this traffic level pooling isn't needed, and the direct connection avoids PgBouncer issues with prepared statements. |
-| **Render** | Free web service built from `backend/Dockerfile` (based on `serversideup/php:8.3-fpm-nginx`). The entrypoint runs `php artisan config:cache && route:cache && migrate --force && db:seed --force`. The seeder is idempotent and skips if products already exist, because Render free has no shell and no pre-deploy hook. Env: `APP_KEY`, `APP_URL`, `DB_URL`, `SESSION_DRIVER=database`, `CACHE_STORE=database`, `SANCTUM_STATEFUL_DOMAINS`, `SESSION_SECURE_COOKIE=true`, `LOG_CHANNEL=stderr`. |
+| **Neon** | Free project with Postgres 16 in AWS Frankfurt (`aws-eu-central-1`, next to Render; the region can't be changed later). Branches: `main` (production), `dev` (local app) and `test` (local test suite, wiped by tests). `pg_trgm` 1.6 is available; `CREATE EXTENSION pg_trgm` runs in a migration. The app uses the **direct (non-pooled)** connection string with `sslmode=require`. At this traffic level pooling isn't needed, and the direct connection avoids PgBouncer issues with prepared statements. Free computes suspend after 5 minutes idle. |
+| **Render** | Free web service in Frankfurt, built from `backend/Dockerfile` (based on `serversideup/php:8.4-fpm-nginx`, nginx on port 8080). There is no custom entrypoint: the image's Laravel automations (`AUTORUN_ENABLED=true`) run `migrate --force` (waiting up to 60 s for the database) and `optimize` on every container start. Seeding is enabled in M1 with `AUTORUN_LARAVEL_MIGRATION_SEED=true`; the seeder is idempotent and skips if products already exist, because Render free has no shell and no pre-deploy hook. Non-secret defaults (`APP_ENV=production`, `APP_DEBUG=false`, `LOG_CHANNEL=stderr`, `DB_CONNECTION=pgsql`, `SESSION_DRIVER=database`, `CACHE_STORE=database`) are baked into the image. Dashboard env: `APP_KEY`, `APP_URL`, `DB_URL`, `SESSION_SECURE_COOKIE=true`, `PORT=8080`, and `SANCTUM_STATEFUL_DOMAINS` from M5. |
 | **Vercel** | Project root `frontend/`, build `npm run build`, output `dist/`. `vercel.json` is shown below. |
-| **Keep-warm** | Render free sleeps after 15 minutes idle, and a cold start takes about 30–50 s, which can exceed Vercel's proxy timeout. A free cron-job.org job hits `https://<app>.vercel.app/api/health` every 10 minutes. One always-on service uses about 744 of Render's 750 free hours a month. |
-| **Local dev** | `docker compose up -d` (Postgres 16), `php artisan serve`, `npm run dev`. The Vite dev server proxies `/api` and `/sanctum` to `localhost:8000`, which mirrors the single origin used in production. |
+| **Keep-warm** | Render free sleeps after 15 minutes idle, and a cold start takes about a minute. Vercel waits up to 120 s for an external rewrite, so the first request is slow rather than failing. A free cron-job.org job hitting `https://<app>.vercel.app/api/health` every 10 minutes avoids the wait (deferred from M0). One always-on service uses about 744 of Render's 750 free hours a month. |
+| **Local dev** | No Docker: `backend/.env` points at the Neon `dev` branch and `backend/.env.testing` at `test`. `php artisan serve`, `npm run dev`. The Vite dev server proxies `/api` and `/sanctum` to `localhost:8000`, which mirrors the single origin used in production. |
 
-`vercel.json` (rule order matters):
+`vercel.json` (rule order matters). Vercel projects created after 2026-04-06 cache external-rewrite responses according to their `Cache-Control` headers, so the `headers` block turns that off for the API and Sanctum routes:
 
 ```json
 {
@@ -226,6 +226,10 @@ The cart lives in localStorage as `[{offerId, quantity}]`. The client never send
     { "source": "/api/:path*",     "destination": "https://<api>.onrender.com/api/:path*" },
     { "source": "/sanctum/:path*", "destination": "https://<api>.onrender.com/sanctum/:path*" },
     { "source": "/(.*)",           "destination": "/index.html" }
+  ],
+  "headers": [
+    { "source": "/api/:path*",     "headers": [{ "key": "x-vercel-enable-rewrite-caching", "value": "0" }] },
+    { "source": "/sanctum/:path*", "headers": [{ "key": "x-vercel-enable-rewrite-caching", "value": "0" }] }
   ]
 }
 ```
@@ -234,9 +238,9 @@ The cart lives in localStorage as `[{offerId, quantity}]`. The client never send
 
 | Layer | Tool | What it covers |
 |---|---|---|
-| Backend feature tests | Pest + Postgres (Docker locally, `postgres:16` service in CI) | Every endpoint. Store filters, sorts, pagination and facets. Auth guards. Checkout: happy path, declined card, out of stock, inactive offer, idempotent replay, ignored price tampering, another user's order → 404. Homepage: ordering, inactive blocks hidden, a failing provider skipped |
+| Backend feature tests | Pest + Postgres (Neon `test` branch locally, `postgres:16` service in CI) | Every endpoint. Store filters, sorts, pagination and facets. Auth guards. Checkout: happy path, declined card, out of stock, inactive offer, idempotent replay, ignored price tampering, another user's order → 404. Homepage: ordering, inactive blocks hidden, a failing provider skipped |
 | Search ranking | Pest dataset | About 15 `(query → expected first slug)` cases covering typos, partial names, word prefixes and case. An `EXPLAIN` check confirms the GIN index is used |
 | Concurrency | Pest + `Process::pool` | 20 OS processes each run `CheckoutService` (through a small artisan command) against one offer with 5 keys. The test asserts 5 orders, 15 `out_of_stock` results, 5 distinct sold keys and 0 available keys. It uses `DatabaseMigrations`/truncation instead of transaction rollback, so the worker processes can see the seeded rows |
 | Frontend unit | Vitest + Testing Library | Cart store (add, merge, clamp, persist), `blockRegistry` (unknown type → nothing), Store URL ↔ filter state mapping |
 | End to end | Playwright | One happy path: typo search → product → add offer → cart → login → pay with 4242 → key shown → visible in order history |
-| CI | GitHub Actions | Backend: `pint --test`, `pest`. Frontend: `eslint`, `tsc --noEmit`, `vitest`, `vite build`. Runs on every push and PR |
+| CI | GitHub Actions | Backend: `pint --test`, `pest`. Frontend: `oxlint`, `tsc -b`, `vitest`, `vite build`. Runs on every push and PR |

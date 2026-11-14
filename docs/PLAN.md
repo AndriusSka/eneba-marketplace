@@ -20,8 +20,8 @@ Deploying in M0 is deliberate: free-tier hosting problems (proxy, cookies, cold 
 
 ## M0 — Skeleton and deploy first
 
-- [ ] `/backend`: fresh Laravel 11 app with Pest and Pint, configured for Postgres.
-- [ ] `/frontend`: Vite React TS app with React Router, TanStack Query, Tailwind, ESLint and Vitest.
+- [ ] `/backend`: fresh Laravel 13 app with Pest and Pint, configured for Postgres.
+- [ ] `/frontend`: Vite React TS app with React Router, TanStack Query, Tailwind, oxlint and Vitest.
 - [ ] `docker-compose.yml` with Postgres 16, and `.env.example` files for both apps.
 - [ ] `GET /api/health` returns `{status:"ok", db:"ok"}` after running `SELECT 1`.
 - [ ] Vite dev proxy sends `/api` and `/sanctum` to `localhost:8000`.
@@ -113,7 +113,7 @@ Deploying in M0 is deliberate: free-tier hosting problems (proxy, cookies, cold 
 
 ## M8 — Eneba styling
 
-- [ ] Tokens taken from eneba.com (colors, font family and scale, spacing, radii, shadows) and recorded in `tailwind.config` with comments naming the source.
+- [ ] Tokens taken from eneba.com (colors, font family and scale, spacing, radii, shadows) and recorded in the Tailwind `@theme` block in `frontend/src/index.css` with comments naming the source.
 - [ ] Shared components: header (logo slot, search, cart, user menu), footer with an "assignment demo" note, `ProductCard`, `Button` variants, `Badge` (platform, region, discount), price display and skeleton loaders.
 - [ ] Every page restyled, with a responsive pass at 375, 768 and 1440 px.
 - [ ] Accessibility basics: visible focus, alt text, sufficient contrast, labels on form inputs.
