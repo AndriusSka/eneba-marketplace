@@ -55,13 +55,24 @@ Deploying in M0 is deliberate: free-tier hosting problems (proxy, cookies, cold 
 
 ## M2 — Store
 
-- [ ] `GET /api/products` with `platform[]`, `region[]`, `min_price`, `max_price`, `sort` (price ↑/↓, newest, best-selling) and `page` (24 per page).
-- [ ] Each product carries its from-price, stock flag, platform and region. Out-of-stock products sort last on price sorts.
-- [ ] Disjunctive facet counts for platforms and regions, plus the overall price min/max.
-- [ ] Store page: filter sidebar (a drawer on mobile), sort dropdown, product grid, pagination, and loading, empty and error states.
-- [ ] Filter, sort and page state lives in URL search params, read and written through one hook.
+- [x] `GET /api/products` with `platform[]`, `region[]`, `min_price`, `max_price`, `sort` (price ↑/↓, newest, best-selling) and `page` (24 per page).
+- [x] Each product carries its from-price, stock flag, platform and region. Out-of-stock products sort last on price sorts.
+- [x] Disjunctive facet counts for platforms and regions, plus the overall price min/max.
+- [x] Store page: filter sidebar (a drawer on mobile), sort dropdown, product grid, pagination, and loading, empty and error states.
+- [x] Filter, sort and page state lives in URL search params, read and written through one hook.
 
 **Verify:** Pest tests cover each filter, each sort, combined filters, pagination edges and facet counts against a known fixture. Vitest covers the URL ↔ state mapping. Manually: set filters, reload and go back/forward, and the view is preserved.
+
+**Verified 2026-11-14** (shipped with M4 in one branch):
+- **Automated:**
+  - Pest 69/69 on the `test` branch. `ProductIndexTest` runs against a fixed `StoreCatalog` fixture.
+  - Pint is clean.
+  - oxlint, `tsc -b` and the build pass.
+  - Vitest 47/47: `storeParams`, `useStoreParams` (Back restores the previous filters) and `money`.
+- **Manual, on the `dev` data:**
+  - Reload and back/forward preserve the view.
+  - The drawer works at 375px.
+- **Name filter:** `q` is an escaped substring match with exact/prefix/word-prefix relevance tiers for now. Fuzzy matching is still open under M3.
 
 ## M3 — Search
 
@@ -74,10 +85,17 @@ Deploying in M0 is deliberate: free-tier hosting problems (proxy, cookies, cold 
 
 ## M4 — Product page
 
-- [ ] `GET /api/products/{slug}`: product details plus offers with seller name and rating, price, discount compared with MSRP and stock, sorted by price. 404 for an unknown slug.
-- [ ] Page: cover, title, platform and region badges, description, release date, and the offers table. The best offer is highlighted. Out-of-stock offers are disabled. "Add to cart" on each offer.
+- [x] `GET /api/products/{slug}`: product details plus offers with seller name and rating, price, discount compared with MSRP and stock, sorted by price. 404 for an unknown slug.
+- [x] Page: cover, title, platform and region badges, description, release date, and the offers table. The best offer is highlighted. Out-of-stock offers are disabled. "Add to cart" on each offer.
 
 **Verify:** Pest covers the offers order, the stock count (sold keys excluded) and the 404. Manually: a product with mixed in-stock and out-of-stock offers renders correctly at 375px and 1440px.
+
+**Verified 2026-11-14:**
+- **Automated:**
+  - `ProductShowTest`: offers in stock first, then by price; `stock` excludes sold keys; a sold-out offer has `stock: 0`; inactive offers are left out; 404 `{"message":"Not found."}`.
+  - Vitest `ProductPage`: an unknown slug shows the 404 page; sold-out offers have a disabled button; the best offer is highlighted.
+- **Manual:** checked at 375px and 1440px.
+- **Not done yet:** "Add to cart" is rendered but not wired up; that happens in M6.
 
 ## M5 — Authentication
 
