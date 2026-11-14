@@ -79,10 +79,11 @@ Deploying in M0 is deliberate: free-tier hosting problems (proxy, cookies, cold 
 ## M5 — Authentication
 
 - [ ] Sanctum SPA setup: stateful domains, TrustProxies, database sessions and the CSRF cookie flow in the fetch client.
+- [ ] Close CORS explicitly: publish `config/cors.php` with `allowed_origins => []` and `supports_credentials => false`. The SPA is same-origin through the Vercel rewrite and the Vite proxy, so it never needs CORS. Laravel's unpublished default (`allowed_origins => ['*']` on `api/*`) is live since M0 and was never a decision. Note it in ARCHITECTURE.md › Authentication.
 - [ ] `POST /api/register`, `/api/login` (rate-limited), `/api/logout` and `GET /api/me`.
 - [ ] Login and register pages with server validation errors shown on the fields. `RequireAuth` wrapper with `?next=` redirect back. Header shows the user menu or a sign-in link.
 
-**Verify:** Pest tests: register, login with valid and invalid credentials, logout, the throttle after 5 failures, and a guest getting 401 on `/api/checkout`, `/api/orders` and `/api/me`. **Production check:** sign in on the Vercel URL, reload the page and stay signed in. This confirms the cookie survives the proxy.
+**Verify:** Pest tests: register, login with valid and invalid credentials, logout, the throttle after 5 failures, and a guest getting 401 on `/api/checkout`, `/api/orders` and `/api/me`. A request with a foreign `Origin` (including a preflight `OPTIONS`) gets no `Access-Control-Allow-Origin` header. **Production check:** sign in on the Vercel URL, reload the page and stay signed in. This confirms the cookie survives the proxy.
 
 ## M6 — Cart and checkout
 
