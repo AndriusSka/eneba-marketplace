@@ -20,17 +20,20 @@ Deploying in M0 is deliberate: free-tier hosting problems (proxy, cookies, cold 
 
 ## M0 — Skeleton and deploy first
 
-- [ ] `/backend`: fresh Laravel 13 app with Pest and Pint, configured for Postgres.
-- [ ] `/frontend`: Vite React TS app with React Router, TanStack Query, Tailwind, oxlint and Vitest.
-- [ ] `docker-compose.yml` with Postgres 16, and `.env.example` files for both apps.
-- [ ] `GET /api/health` returns `{status:"ok", db:"ok"}` after running `SELECT 1`.
-- [ ] Vite dev proxy sends `/api` and `/sanctum` to `localhost:8000`.
-- [ ] `backend/Dockerfile` and entrypoint (cache config, migrate, seed).
-- [ ] Neon project created and `pg_trgm` available. Render service and Vercel project deployed, with `vercel.json` rewrites in place.
-- [ ] GitHub Actions CI: backend (Pint, Pest with a Postgres service) and frontend (lint, `tsc`, Vitest, build).
-- [ ] cron-job.org ping to `/api/health` configured.
+- [x] `/backend`: fresh Laravel 13 app with Pest and Pint, configured for Postgres.
+- [x] `/frontend`: Vite React TS app with React Router, TanStack Query, Tailwind, oxlint and Vitest.
+- [x] `.env.example` files for both apps (plus `backend/.env.testing.example`).
+- [ ] `docker-compose.yml` with Postgres 16. **Deferred** (2026-11-14): local work uses Neon `dev`/`test` branches; no Docker on the dev machine.
+- [x] `GET /api/health` returns `{status:"ok", db:"ok"}` after running `SELECT 1` (503 `{status:"error", db:"error"}` when the database is down).
+- [x] Vite dev proxy sends `/api` and `/sanctum` to `localhost:8000`.
+- [x] `backend/Dockerfile` with the serversideup image's start-up automations (migrate, optimize). Seeding is switched on in M1.
+- [x] Neon project created (Frankfurt, `main`/`dev`/`test` branches) and `pg_trgm` 1.6 available. Render service and Vercel project deployed, with `vercel.json` rewrites in place.
+- [ ] GitHub Actions CI: backend (Pint, Pest with a Postgres service) and frontend (lint, `tsc`, Vitest, build). **Deferred** (2026-11-14).
+- [ ] cron-job.org ping to `/api/health` configured. **Deferred** (2026-11-14).
 
 **Verify:** `https://<app>.vercel.app/api/health` returns the health JSON through the Vercel origin, and the SPA loads at `/`. CI is green on `main`.
+
+**Verified 2026-11-14** at https://eneba-marketplace-rosy.vercel.app: `/api/health` → 200 `{"status":"ok","db":"ok"}` through the Vercel origin (not CDN-cached), the page shows "API OK", and `/store` serves the SPA. Locally: Pest 3/3 against the Neon `test` branch, Pint clean, oxlint, `tsc -b`, Vitest 3/3 and the build pass. The CI part is pending with the deferred CI item.
 
 ## M1 — Schema and seed data
 
