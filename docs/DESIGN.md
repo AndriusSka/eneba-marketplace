@@ -1,6 +1,6 @@
 # Design
 
-The visual reference is eneba.com, captured in [design/](design/) (01–10, Lithuanian locale, desktop). This file is the only source of design tokens: `tailwind.config` takes its values from here, and components use only these tokens.
+The visual reference is eneba.com, captured in [design/](design/) (01–10, Lithuanian locale, desktop). This file is the only source of design tokens: the Tailwind `@theme` block in `frontend/src/index.css` takes its values from here, and components use only these tokens.
 
 Each value is labeled with its source:
 

@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 A marketplace for digital game keys styled like eneba.com, built as an assignment demo. Visitors browse and search the catalog, compare seller offers, pay with a simulated card and see the key on screen.
-Laravel 11 API and React 18 + TypeScript SPA on PostgreSQL 16. Scope: docs/SPEC.md · design: docs/ARCHITECTURE.md · build order: docs/PLAN.md · visual tokens: docs/DESIGN.md.
+Laravel 13 (PHP 8.4) API and React 19 + TypeScript 7 SPA on PostgreSQL 16 (Neon). Scope: docs/SPEC.md · design: docs/ARCHITECTURE.md · build order: docs/PLAN.md · visual tokens: docs/DESIGN.md.
 
 ## Repo layout
 - `frontend/`: Vite + React + TS SPA, deployed to Vercel
@@ -10,23 +10,25 @@ Laravel 11 API and React 18 + TypeScript SPA on PostgreSQL 16. Scope: docs/SPEC.
 - `ai-logs/`: exported AI session logs, one file per session
 
 ## Commands
-Placeholders until M0 creates the skeleton. Update this section when it lands.
+No local Docker: the database is Neon. `backend/.env` points `DB_URL` at the Neon `dev` branch and `backend/.env.testing` at the `test` branch (both gitignored; tests refuse to run without `.env.testing`). PHP 8.4 lives in `C:\php84`, ahead of XAMPP's 8.2 on PATH.
 ```sh
-docker compose up -d                  # Postgres 16 on localhost:5432
 # in backend/
 composer install
-cp .env.example .env && php artisan key:generate
-php artisan migrate --seed
+cp .env.example .env && php artisan key:generate                                  # then set DB_URL (Neon dev)
+cp .env.testing.example .env.testing && php artisan key:generate --env=testing   # then set DB_URL (Neon test)
+php artisan migrate
 php artisan serve                     # http://localhost:8000
-php artisan test                      # Pest, needs Postgres running
-vendor/bin/pint --test                # code style
+php artisan test                      # Pest, against the Neon test branch
+vendor/bin/pint --test                # code style (vendor/bin/pint to fix)
 # in frontend/
 npm ci
-npm run dev                           # http://localhost:5173, proxies /api and /sanctum
+npm run dev                           # http://localhost:5173, proxies /api and /sanctum to :8000
 npm run test                          # Vitest
-npm run lint && npx tsc --noEmit && npm run build
-npx playwright test                   # end to end, needs both apps running
+npm run lint                          # oxlint (no-explicit-any is an error)
+npm run typecheck                     # tsc -b
+npm run build
 ```
+Playwright is added in M9.
 
 ## Conventions
 - TypeScript in strict mode, with no `any`. Use `unknown` and narrow it.
