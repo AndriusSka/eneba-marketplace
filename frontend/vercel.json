@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://RENDER_SERVICE.onrender.com/api/:path*" },
-    { "source": "/sanctum/:path*", "destination": "https://RENDER_SERVICE.onrender.com/sanctum/:path*" },
+    { "source": "/api/:path*", "destination": "https://eneba-marketplace-api-cil8.onrender.com/api/:path*" },
+    { "source": "/sanctum/:path*", "destination": "https://eneba-marketplace-api-cil8.onrender.com/sanctum/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
