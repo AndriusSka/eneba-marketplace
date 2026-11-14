@@ -120,7 +120,7 @@ Tailwind's default 4px spacing scale. Values seen in the screenshots, all **Esti
 ### Product card (02, 03, 04)
 
 - **Box:** `surface-card` with `rounded-sm` corners. On hover, a 1px `line-strong` outline. The whole card links to the product page.
-- **Cover:** 4:5 aspect (**Estimate**, from about 125×155 in the screenshot). A band at the bottom of the cover (`rgb(0 0 0 / 0.5)`) shows the platform name (`text-xs` 600, centered).
+- **Cover:** 3:4 aspect. Eneba's cover measures about 125×155 in the screenshot (≈ 4:5, **Estimate**). We use 3:4 so our placeholder covers (300×400) show without cropping. A band at the bottom of the cover (`rgb(0 0 0 / 0.5)`) shows the platform name (`text-xs` 600, centered).
 - **Body (12px padding), top to bottom:**
   - Title: `text-sm` 600, 2-line clamp.
   - Region: `text-xs` 700, uppercase, in `region-ok` or `region-limited`.

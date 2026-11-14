@@ -1,3 +1,73 @@
 @import 'tailwindcss';
 
-/* Design tokens from docs/DESIGN.md go into an @theme block here in M8. */
+/*
+ * Design tokens. docs/DESIGN.md is the only source: every value below is copied from it
+ * (Given / Measured / Estimate, sampled from eneba.com screenshots in docs/design/).
+ * The default color palette and font sizes are reset so components can only use these tokens.
+ */
+@theme {
+  /* Typography (DESIGN.md › Typography). Metropolis isn't loaded yet, so Arial renders until M8. */
+  --font-sans: Metropolis, Arial, sans-serif;
+
+  --text-*: initial;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.5rem;
+  --text-price: 1.375rem;
+  --text-price--line-height: 1.75rem;
+  --text-h1: 1.5rem;
+  --text-h1--line-height: 2rem;
+  --text-h2: 1.875rem;
+  --text-h2--line-height: 2.25rem;
+  --text-price-lg: 2rem;
+  --text-price-lg--line-height: 2.25rem;
+
+  /* Colors (DESIGN.md › Colors) */
+  --color-*: initial;
+  --color-page: #4618ac;
+  --color-nav: #341282;
+  --color-surface: #311078;
+  --color-surface-raised: #5825cc;
+  --color-surface-card: #1f0a4d;
+  --color-surface-panel: #391787;
+  --color-surface-inset: #2f0f74;
+  --color-field: #2b0e6a;
+  --color-field-filter: #461ea3;
+  --color-field-focus: #200b4e;
+  --color-scrim: rgb(0 0 0 / 0.45);
+  --color-accent: #f9d316;
+  --color-accent-hover: #ffe04d;
+  --color-on-accent: #1a1a1a;
+  --color-teal: #05cdb0;
+  --color-fg: #ffffff;
+  --color-fg-muted: #b2a2d1;
+  --color-line: #4b1db1;
+  --color-line-strong: #a77efe;
+  --color-discount: #74bd4a;
+  --color-region-ok: #5eebc4;
+  --color-region-limited: #ca6493;
+  --color-danger: #e5484d;
+
+  /* Radius (DESIGN.md › Spacing, radius, elevation). `rounded` keeps Tailwind's 4px. */
+  --radius-sm: 2px;
+
+  /* Elevation: only the search dropdown and the modal */
+  --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.35);
+}
+
+@layer base {
+  body {
+    @apply bg-page font-sans text-base text-fg;
+  }
+
+  /* DESIGN.md › Buttons › Focus: a 2px accent outline with a 2px offset (our own style). */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
