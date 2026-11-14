@@ -95,9 +95,9 @@ REST/JSON under `/api`. Errors use one shape: `{ "message": string, "errors"?: {
 |---|---|---|---|
 | GET | `/api/health` | – | Liveness plus a DB ping. Used by the uptime pinger |
 | GET | `/api/home` | – | Ordered homepage blocks with their data |
-| GET | `/api/products` | – | Store listing: `q`, `platform[]`, `region[]`, `min_price`, `max_price` (cents), `sort` (`relevance`, `price_asc`, `price_desc`, `newest`, `bestselling`), `page`. Returns `{data, meta:{page, per_page, total}, facets:{platforms:[{slug,name,count}], regions:[…], price:{min,max}}}` |
+| GET | `/api/products` | – | Store listing: `q`, `platform[]`, `region[]`, `min_price`, `max_price` (cents), `sort` (`relevance`, `price_asc`, `price_desc`, `newest`, `bestselling`), `page`. Returns `{data, meta:{page, per_page, total, last_page}, facets:{platforms:[{slug,name,count}], regions:[…], price:{min_cents,max_cents}}}`. See [Store API](#store-api) |
 | GET | `/api/search/suggest?q=` | – | Top 6 matches for autocomplete (same engine as the listing) |
-| GET | `/api/products/{slug}` | – | Product details plus offers (seller, price, stock, discount), sorted by price |
+| GET | `/api/products/{slug}` | – | Product details plus active offers (seller, price, stock, discount), in stock first, then by price. 404 `{"message":"Not found."}` for an unknown slug |
 | POST | `/api/cart/quote` | – | `{items:[{offer_id, quantity}]}` → current price, stock and line totals per item, plus warnings (`out_of_stock`, `quantity_reduced`, `inactive`) |
 | GET | `/sanctum/csrf-cookie` | – | Sets the `XSRF-TOKEN` cookie before login/register |
 | POST | `/api/register` | – | Create an account and sign in |
@@ -107,6 +107,34 @@ REST/JSON under `/api`. Errors use one shape: `{ "message": string, "errors"?: {
 | POST | `/api/checkout` | user | Header `Idempotency-Key`. Body `{items:[{offer_id, quantity}], card_number}`. Returns 201 for a new order, 200 for a replay of an existing order, 402 declined, 409 out of stock or inactive (names the offer), 422 invalid |
 | GET | `/api/orders` | user | The current user's orders, newest first |
 | GET | `/api/orders/{id}` | user | Order with items and key codes. 404 if it belongs to someone else |
+
+### Store API
+
+Implemented by `ProductController` → `ProductCatalog` (`app/Services/Catalog/`). One `applyFilters()` serves both the results and the facets, so the two can't drift apart.
+
+**`GET /api/products` parameters**
+
+| Param | Rules | Default |
+|---|---|---|
+| `q` | ≤ 100 chars. Trimmed, lower-cased and whitespace collapsed. Matches a substring of `lower(title)`, with LIKE wildcards escaped. M3 adds fuzzy matching | – |
+| `platform[]`, `region[]` | Slugs, ≤ 10 each. OR within a dimension, AND across dimensions. An unknown slug matches nothing | all |
+| `min_price`, `max_price` | Integer cents, inclusive, 0–1 000 000, `max ≥ min`. They apply to the from-price, so setting either one drops out-of-stock products | – |
+| `sort` | `relevance` (tier, then sales), `price_asc` / `price_desc` (out of stock last), `newest` (no release date last), `bestselling` (all-time units sold). Every sort ends on `id`, so pages are stable. `relevance` without `q` becomes `bestselling` | `relevance` if `q` is set, otherwise `bestselling` |
+| `page` | 1–1000, with 24 products per page. A page past the end returns `data: []` with the real `meta` | 1 |
+
+Invalid parameters return 422.
+
+**Fields**
+
+- **Each product in `data`** has `id, slug, title, cover_url, platform{slug,name}, region{slug,name}, release_date|null, msrp_cents, currency, from_price_cents|null, discount_percent|null, in_stock`.
+- **Facets** list every platform and every region (zero counts included), sorted by name. `price` is `{min_cents, max_cents}`, or both `null` when nothing is in stock.
+- **`discount_percent`** is `floor(100 · (msrp − price) / msrp)`. It is `null` unless the price is at least 1% below MSRP. The rule lives in `App\Support\Discount`.
+- **`GET /api/products/{slug}`** adds `description` and `offers[]` to the product fields.
+  - Each offer has `id, seller{id,name,rating}, price_cents, currency, discount_percent|null, stock, in_stock`.
+  - `rating` is a JSON number, and `stock` counts available keys only.
+  - Offers are active ones only, in stock first, then by price, then `id`. So `offers[0]` is the best offer whenever any offer is in stock.
+
+**Store URL.** The SPA keeps the same names and cents in the browser URL, but repeats plain keys for lists (`?platform=steam&platform=xbox`). `frontend/src/features/store/storeParams.ts` maps between the URL, the state and the API query. It parses leniently: invalid values are dropped, so a hand-edited URL never causes a 422. Every committed change pushes a history entry, so Back restores the previous filters.
 
 ### Frontend routes
 
