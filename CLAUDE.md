@@ -30,6 +30,13 @@ npm run build
 ```
 Playwright is added in M9.
 
+### Deploy
+Merging to `main` deploys both apps: Vercel builds `frontend/`, and Render builds `backend/Dockerfile` and runs `migrate --force` and `optimize` on every container start (Render free has no shell). The frontend has no env vars. Render's env (names only): `APP_KEY`, `APP_URL`, `DB_URL` (Neon `main`, direct), `SESSION_SECURE_COOKIE`, `PORT=8080`; everything else is baked into the image.
+```sh
+curl -i https://eneba-marketplace-rosy.vercel.app/api/health    # production smoke check through Vercel; expect 200 {"status":"ok","db":"ok"}
+```
+The first request after 15 idle minutes takes about a minute (Render cold start).
+
 ## Conventions
 - TypeScript in strict mode, with no `any`. Use `unknown` and narrow it.
 - Controllers stay thin: validate with a FormRequest, call a service in `app/Services/`, return a resource. Logic lives in services.
