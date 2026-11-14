@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Banner placeholder">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="0.6"><stop offset="0" stop-color="#4618AC"/><stop offset="1" stop-color="#1F0A4D"/></linearGradient>
+  </defs>
+  <rect width="1200" height="400" fill="url(#g)"/>
+  <circle cx="950" cy="200" r="260" fill="#F9D316" opacity="0.14"/>
+  <circle cx="1020" cy="120" r="140" fill="none" stroke="#F9D316" stroke-width="3" opacity="0.45"/>
+  <path d="M600 400 L1200 160 L1200 400 Z" fill="#1F0A4D" opacity="0.5"/>
+</svg>

@@ -2,8 +2,9 @@ FROM serversideup/php:8.4-fpm-nginx
 
 # Non-secret production defaults. Secrets (APP_KEY, DB_URL) and APP_URL come from the Render dashboard.
 # The image's Laravel automations run on every container start, before nginx starts:
-# storage:link (off: no public disk), migrate --force (waits for the DB), then optimize (caches config with runtime env).
-# Seeding stays off until M1 ships an idempotent seeder.
+# storage:link (off: no public disk), migrate --force --seed (waits for the DB), then optimize (caches config with runtime env).
+# The seeder fills an empty database once and is a no-op afterwards (it skips when products exist), so
+# production gets its demo data on the first deploy without a shell. It uses no Faker (a dev-only package).
 ENV APP_ENV=production \
     APP_DEBUG=false \
     LOG_CHANNEL=stderr \
@@ -15,6 +16,7 @@ ENV APP_ENV=production \
     AUTORUN_ENABLED=true \
     AUTORUN_LARAVEL_STORAGE_LINK=false \
     AUTORUN_LARAVEL_MIGRATION_TIMEOUT=60 \
+    AUTORUN_LARAVEL_MIGRATION_SEED=true \
     COMPOSER_ALLOW_SUPERUSER=1
 
 USER root

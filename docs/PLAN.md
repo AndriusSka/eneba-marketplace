@@ -37,18 +37,21 @@ Deploying in M0 is deliberate: free-tier hosting problems (proxy, cookies, cold 
 
 ## M1 — Schema and seed data
 
-- [ ] Migrations for every table in ARCHITECTURE.md, including the CHECK constraints, UNIQUE constraints, the partial index on available keys, and the `pg_trgm` extension with the GIN index.
-- [ ] Eloquent models and relations. Factories for every model.
-- [ ] Idempotent `DatabaseSeeder` that creates:
-  - 6 platforms, 4 regions and 8 sellers
-  - about 80 products with real game titles, placeholder covers and MSRPs
-  - 1–6 offers per product with 0–15 keys each, some deliberately out of stock and some priced below MSRP
-  - a demo user with past orders, so best sellers has data
+- [x] Migrations for every table in ARCHITECTURE.md, including the CHECK constraints, UNIQUE constraints, the partial index on available keys, the `pg_trgm` extension with the GIN index, an index on every filtered or sorted column, and a `currency` column locked to EUR.
+- [x] Eloquent models and relations. Factories for every model.
+- [x] Idempotent `DatabaseSeeder` (no Faker: it runs in the production image) that creates:
+  - 4 platforms (Steam, Xbox, PlayStation, Nintendo), 3 regions (Global, EU, North America) and 5 sellers
+  - 30 products (24 games, 6 gift cards) with real titles, including the search-test titles, plus self-hosted placeholder covers and MSRPs
+  - 2–5 offers per product with 0–15 keys each, 2 products fully out of stock, deals below MSRP and one inactive offer
+  - a demo user and 4 shoppers with 20 past orders that sold real keys, so best sellers has data
   - 3 banners
   - `homepage_blocks` rows for `hero_banner`, `best_sellers` and `deals`
-- [ ] A test proves the constraints hold: a duplicate key code, a sold key without an `order_item_id`, and a negative price are each rejected.
+- [x] A test proves the constraints hold: a duplicate key code, a sold key without an `order_item_id`, and a negative price are each rejected (plus currency, rating, quantity, status and duplicate offer/idempotency cases).
+- [x] Production seeds itself on deploy: `AUTORUN_LARAVEL_MIGRATION_SEED=true` in the Dockerfile, with the seeder skipping when products exist.
 
 **Verify:** `php artisan migrate:fresh --seed` succeeds twice in a row. A second plain `db:seed` is a no-op. Row counts match in `psql`. The constraint tests pass.
+
+**Verified 2026-11-14** on the Neon `dev` branch: `migrate:fresh --seed` twice gives the same 30 products, 101 offers, 796 keys, 20 orders and 53 sold keys. A plain `db:seed` prints "already seeded, skipping". Pest 25/25 on the `test` branch (SeederTest, SchemaConstraintsTest, HealthTest), Pint clean. The production seed is checked after merge (Neon console: `SELECT count(*) FROM products` = 30).
 
 ## M2 — Store
 
