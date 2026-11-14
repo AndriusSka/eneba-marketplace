@@ -47,7 +47,7 @@ docs/
 
 ## Data model
 
-All money is stored as integer euro cents (`*_cents`). Every foreign key is indexed. Timestamps (`created_at`, `updated_at`) are omitted below.
+All money is stored as integer euro cents (`*_cents`). Tables that own a price (`products`, `offers`, `orders`) also record `currency char(3) DEFAULT 'EUR'` with `CHECK (currency = 'EUR')`: the currency is explicit in the data, but mixing currencies stays impossible until it is deliberately supported (SPEC.md keeps multi-currency out of scope). `order_items` take the order's currency. Every foreign key is indexed, and so is every column the Store filters or sorts by. Constraints and custom indexes have explicit names. Timestamps (`created_at`, `updated_at`) are omitted below.
 
 ```
 platforms 1─N products N─1 regions
@@ -62,16 +62,16 @@ homepage_blocks, banners      (homepage sources, standalone)
 |---|---|---|
 | `platforms` | id, slug, name | `slug` UNIQUE |
 | `regions` | id, slug, name | `slug` UNIQUE |
-| `products` | id, slug, title, platform_id, region_id, description, cover_url, release_date, msrp_cents | `slug` UNIQUE. GIN `gin_trgm_ops` index on `lower(title)` for search. `msrp_cents > 0` |
+| `products` | id, slug, title, platform_id, region_id, description, cover_url, release_date NULL (gift cards have none), msrp_cents, currency | `slug` UNIQUE. GIN `gin_trgm_ops` index `products_title_trgm` on `lower(title)` for search. Indexes on platform_id, region_id and release_date (newest sort). `msrp_cents > 0`. `currency = 'EUR'` |
 | `sellers` | id, name, rating (numeric 3,2) | `rating BETWEEN 0 AND 5` |
-| `offers` | id, product_id, seller_id, price_cents, is_active | UNIQUE (product_id, seller_id). `price_cents > 0` |
-| `keys` | id, offer_id, code, status, order_item_id NULL, sold_at NULL | `code` UNIQUE. `status IN ('available','sold')`. CHECK: `status='sold'` ⇔ `order_item_id IS NOT NULL`. Partial index on `(offer_id) WHERE status='available'` |
+| `offers` | id, product_id, seller_id, price_cents, currency, is_active | UNIQUE (product_id, seller_id). Partial index `offers_active_product_price` on `(product_id, price_cents) WHERE is_active` for the from-price, price sort and price filter. `price_cents > 0`. `currency = 'EUR'` |
+| `keys` | id, offer_id, code, status, order_item_id NULL, sold_at NULL | `code` UNIQUE. `status IN ('available','sold')`. CHECK: `status='sold'` ⇔ `order_item_id IS NOT NULL`. Partial index `keys_available_offer` on `(offer_id, id) WHERE status='available'`: it serves stock counts and the checkout claim's `ORDER BY id LIMIT n` |
 | `users` | Laravel default (id, name, email, password) | `email` UNIQUE |
 | `sessions` | Laravel database session driver | Render's disk is ephemeral, so file sessions would be lost |
-| `orders` | id, user_id, status, total_cents, idempotency_key, paid_at | UNIQUE (user_id, idempotency_key). `status IN ('paid')`, with room for later states |
-| `order_items` | id, order_id, offer_id, unit_price_cents, quantity | `quantity BETWEEN 1 AND 10`. The price is copied at purchase time |
-| `banners` | id, title, subtitle, image_url, link_url, position, is_active | |
-| `homepage_blocks` | id, type, title, position, is_active, config jsonb | `type` is the provider key. `config` holds e.g. `{"limit": 12}` |
+| `orders` | id, user_id, status, total_cents, currency, idempotency_key (uuid), paid_at | UNIQUE (user_id, idempotency_key). Index on `(user_id, created_at)` for history and on `paid_at` for the best-sellers window. `status IN ('paid')`, with room for later states. `total_cents >= 0`. `currency = 'EUR'` |
+| `order_items` | id, order_id, offer_id, unit_price_cents, quantity | `quantity BETWEEN 1 AND 10`. `unit_price_cents > 0`. The price is copied at purchase time |
+| `banners` | id, title, subtitle, image_url, link_url, position, is_active | Partial index on `(position) WHERE is_active` |
+| `homepage_blocks` | id, type, title, position, is_active, config jsonb | `type` is the provider key. `config` holds e.g. `{"limit": 12}`. Partial index on `(position) WHERE is_active` |
 
 Derived values (not stored):
 - **Stock of an offer** = `COUNT(keys WHERE status='available')`.
@@ -82,6 +82,10 @@ Derived values (not stored):
 At this catalog size (about 80 products) these are cheap aggregates. Denormalized counters would only be worth adding once profiling shows a need.
 
 There is no cart table: the cart is client state (see Checkout).
+
+### Seed data
+
+`DatabaseSeeder` loads a fixed catalog from `database/seeders/data/catalog.php`: 4 platforms, 3 regions, 5 invented sellers, and 30 products (24 games and 6 gift cards) with 2–5 offers each and 0–15 keys per offer. It also creates a demo user (`demo@example.com` / `password`) and 4 shoppers with 20 past orders that sold real keys, plus 3 banners and the 3 homepage blocks. Structure and prices come from `mt_rand` with a fixed seed, so every environment gets the same catalog. Key codes use `random_int`. Covers and banners are abstract SVGs in `frontend/public/placeholders/`, served same-origin with no game art. The seeder does not use Faker, because Faker is a dev dependency missing from the production image. It skips when products already exist, and runs inside one transaction with bulk inserts (the database is remote).
 
 ## API
 
@@ -129,7 +133,7 @@ interface BlockProvider {
 | `type` | Provider | Data source |
 |---|---|---|
 | `hero_banner` | `BannerProvider` | `banners WHERE is_active ORDER BY position` |
-| `best_sellers` | `BestSellersProvider` | Products ranked by `SUM(order_items.quantity)` over orders in the last 30 days (`config.days`, `config.limit`), with each product's from-price |
+| `best_sellers` | `BestSellersProvider` | Products ranked by `SUM(order_items.quantity)` over orders in the last `config.days` days (seeded as 90, because production is seeded once and its orders age), up to `config.limit`, with each product's from-price |
 | `deals` | `DealsProvider` | For each product, its cheapest active in-stock offer, kept only if `price_cents < msrp_cents`, ordered by discount % (`config.limit`, `config.min_discount`) |
 
 Adding a block type takes a provider class, one registry entry, a React component and one `blockRegistry` entry. Reordering, renaming or disabling blocks is a database update with no deploy.
@@ -213,7 +217,7 @@ The cart lives in localStorage as `[{offerId, quantity}]`. The client never send
 | Piece | Setup |
 |---|---|
 | **Neon** | Free project with Postgres 16 in AWS Frankfurt (`aws-eu-central-1`, next to Render; the region can't be changed later). Branches: `main` (production), `dev` (local app) and `test` (local test suite, wiped by tests). `pg_trgm` 1.6 is available; `CREATE EXTENSION pg_trgm` runs in a migration. The app uses the **direct (non-pooled)** connection string with `sslmode=require`. At this traffic level pooling isn't needed, and the direct connection avoids PgBouncer issues with prepared statements. Free computes suspend after 5 minutes idle. |
-| **Render** | Free web service in Frankfurt, built from `backend/Dockerfile` (based on `serversideup/php:8.4-fpm-nginx`, nginx on port 8080). There is no custom entrypoint: the image's Laravel automations (`AUTORUN_ENABLED=true`) run `migrate --force` (waiting up to 60 s for the database) and `optimize` on every container start. Seeding is enabled in M1 with `AUTORUN_LARAVEL_MIGRATION_SEED=true`; the seeder is idempotent and skips if products already exist, because Render free has no shell and no pre-deploy hook. Non-secret defaults (`APP_ENV=production`, `APP_DEBUG=false`, `LOG_CHANNEL=stderr`, `DB_CONNECTION=pgsql`, `SESSION_DRIVER=database`, `CACHE_STORE=database`) are baked into the image. Dashboard env: `APP_KEY`, `APP_URL`, `DB_URL`, `SESSION_SECURE_COOKIE=true`, `PORT=8080`, and `SANCTUM_STATEFUL_DOMAINS` from M5. |
+| **Render** | Free web service in Frankfurt, built from `backend/Dockerfile` (based on `serversideup/php:8.4-fpm-nginx`, nginx on port 8080). There is no custom entrypoint: the image's Laravel automations (`AUTORUN_ENABLED=true`) run `migrate --force --seed` (waiting up to 60 s for the database) and `optimize` on every container start. `AUTORUN_LARAVEL_MIGRATION_SEED=true` adds `--seed`. The seeder fills an empty database on the first deploy and skips once products exist, because Render free has no shell and no pre-deploy hook. Non-secret defaults (`APP_ENV=production`, `APP_DEBUG=false`, `LOG_CHANNEL=stderr`, `DB_CONNECTION=pgsql`, `SESSION_DRIVER=database`, `CACHE_STORE=database`) are baked into the image. Dashboard env: `APP_KEY`, `APP_URL`, `DB_URL`, `SESSION_SECURE_COOKIE=true`, `PORT=8080`, and `SANCTUM_STATEFUL_DOMAINS` from M5. |
 | **Vercel** | Project root `frontend/`, build `npm run build`, output `dist/`. `vercel.json` is shown below. |
 | **Keep-warm** | Render free sleeps after 15 minutes idle, and a cold start takes about a minute. Vercel waits up to 120 s for an external rewrite, so the first request is slow rather than failing. A free cron-job.org job hitting `https://<app>.vercel.app/api/health` every 10 minutes avoids the wait (deferred from M0). One always-on service uses about 744 of Render's 750 free hours a month. |
 | **Local dev** | No Docker: `backend/.env` points at the Neon `dev` branch and `backend/.env.testing` at `test`. `php artisan serve`, `npm run dev`. The Vite dev server proxies `/api` and `/sanctum` to `localhost:8000`, which mirrors the single origin used in production. |

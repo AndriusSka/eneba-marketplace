@@ -95,7 +95,7 @@ The Store and Search are treated as one feature because they share one query eng
 | Email delivery of keys | The key is shown on screen and stays in order history, which meets "receive the key" without email infrastructure. |
 | Password reset, email verification, social login | Auth is in the minimal tier. Register, sign in and protected routes meet the requirement. |
 | Reviews, ratings, wishlists | Not requested. Seller rating is a seeded column. |
-| Multi-currency, VAT, i18n | Everything is in EUR with integer cents, and the UI is English. Currency conversion would touch every price path for no evaluation value. |
+| Multi-currency, VAT, i18n | Everything is in EUR with integer cents, and the UI is English. Each price records its currency code, but a database CHECK only allows `EUR`. Currency conversion would touch every price path for no evaluation value. |
 | Refunds, cancellations | No real money moves. The order status column leaves room for them later. |
 | External search engine (Meilisearch, Algolia) | Postgres trigrams handle typos and partial names at this catalog size, and keep search as our own code, which can be explained and tested. One less service to host and keep in sync. |
 | Product variants ("other platforms/regions" switcher) | Products are flat listings (title + platform + region), as on eneba.com. Grouping variants would add a join to every query and isn't required. |
