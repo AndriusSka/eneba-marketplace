@@ -94,7 +94,7 @@ REST/JSON under `/api`. Errors use one shape: `{ "message": string, "errors"?: {
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
 | GET | `/api/health` | – | Liveness plus a DB ping. Used by the uptime pinger |
-| GET | `/api/home` | – | Ordered homepage blocks with their data |
+| GET | `/api/home` | – | Ordered homepage blocks with their data: `{data: [{id, type, title, link_url\|null, data: [...]}]}`. See [Homepage block design](#homepage-block-design) |
 | GET | `/api/products` | – | Store listing: `q`, `platform[]`, `region[]`, `min_price`, `max_price` (cents), `sort` (`relevance`, `price_asc`, `price_desc`, `newest`, `bestselling`), `page`. Returns `{data, meta:{page, per_page, total, last_page}, facets:{platforms:[{slug,name,count}], regions:[…], price:{min_cents,max_cents}}}`. See [Store API](#store-api) |
 | GET | `/api/search/suggest?q=` | – | Top 6 matches for autocomplete (same engine and order as the listing). `{data: [product]}` with the Store's product fields. Empty `q` → `{data: []}`; `q` over 100 chars → 422 |
 | GET | `/api/products/{slug}` | – | Product details plus active offers (seller, price, stock, discount), in stock first, then by price. 404 `{"message":"Not found."}` for an unknown slug |
@@ -146,29 +146,45 @@ Invalid parameters return 422.
 
 `GET /api/home` → `HomepageService`:
 
-1. Load `homepage_blocks WHERE is_active ORDER BY position`.
-2. For each row, look up the provider for `type` in a registry. The registry is a type → class map bound in a service provider.
-3. Call `provider->fetch(config)` inside a try/catch. If a provider throws, log the error and leave that block out. One broken block never takes down the page.
-4. Leave out blocks with an unknown type or empty data.
-5. Return `[{id, type, title, data}]`.
+1. Load `homepage_blocks WHERE is_active ORDER BY position, id`.
+2. For each row, look up the provider for `type` in `BlockProviderRegistry`. The registry is a type → class map bound in `AppServiceProvider`, and it resolves providers through the container.
+3. Call `provider->fetch(config)` inside a try/catch on `Throwable`. If a provider throws, log an error (block id, type, exception) and leave that block out. One broken block never takes down the page.
+4. Leave out blocks with empty data. Leave out blocks with an unknown type and log a warning, so a typo in `type` shows up in the logs.
+5. Return `{data: [{id, type, title, link_url, data}]}`.
 
 ```php
 interface BlockProvider {
-    public function fetch(array $config): array;   // block-specific payload
+    public function fetch(array $config): array;   // list of the block's items; [] hides the block
 }
 ```
 
-| `type` | Provider | Data source |
-|---|---|---|
-| `hero_banner` | `BannerProvider` | `banners WHERE is_active ORDER BY position` |
-| `best_sellers` | `BestSellersProvider` | Products ranked by `SUM(order_items.quantity)` over orders in the last `config.days` days (seeded as 90, because production is seeded once and its orders age), up to `config.limit`, with each product's from-price |
-| `deals` | `DealsProvider` | For each product, its cheapest active in-stock offer, kept only if `price_cents < msrp_cents`, ordered by discount % (`config.limit`, `config.min_discount`) |
+| `type` | Provider | Data source | `data` items |
+|---|---|---|---|
+| `hero_banner` | `BannerProvider` | `banners WHERE is_active ORDER BY position, id` | `{id, title, subtitle\|null, image_url, link_url}` |
+| `best_sellers` | `BestSellersProvider` | Products ranked by `SUM(order_items.quantity)` over orders paid in the last `config.days` days, then by id. Sold-out products (no from-price) are left out, so every homepage card can be bought | Store product fields |
+| `deals` | `DealsProvider` | Products whose from-price (their cheapest active in-stock offer) is below MSRP by at least `config.min_discount` percent, using the same floor as `discount_percent`. Biggest discount first, then id | Store product fields |
+
+**Config.** `config` is edited by hand in the database, so every value is optional. A missing or non-integer value takes the default, an out-of-range one is clamped, and a config that isn't a JSON object counts as `{}`.
+
+| Key | Blocks | Default | Range |
+|---|---|---|---|
+| `limit` | `hero_banner` | 5 | 1–10 |
+| `limit` | `best_sellers`, `deals` | 12 | 1–24 |
+| `days` | `best_sellers` | 30 (seeded as 90, because production is seeded once and its orders age) | 1–365 |
+| `min_discount` | `deals` | 1 (seeded as 10) | 1–99 |
+| `link_url` | any | none | A same-site path for the block's "View all" link (seeded as `/store?sort=bestselling` on best sellers). Anything else, such as absolute, protocol-relative or `javascript:` URLs, becomes `null` |
 
 Adding a block type takes a provider class, one registry entry, a React component and one `blockRegistry` entry. Reordering, renaming or disabling blocks is a database update with no deploy.
 
 **Frontend**
 
-`HomePage` makes one `useQuery(['home'])` call and maps over the blocks: `blockRegistry[block.type]` → component (`HeroBanner`, `ProductCarousel`). Unknown types render `null`. Each block is wrapped in an error boundary. The frontend contains no titles, product IDs or ordering.
+`HomePage` makes one `useQuery(['home'])` call, which checks only the block envelope, and renders the blocks in API order. Each block is wrapped in `BlockErrorBoundary`, and `HomeBlockView` looks its type up in `blockRegistry` (`src/blocks/blockRegistry.tsx`). Each entry pairs a data guard with a component (`HeroBanner`, `ProductCarousel`).
+
+A block renders `null` when:
+- its type is unknown (looked up with `Object.hasOwn`, so `toString` doesn't match), or
+- its data fails the guard.
+
+Banner links that aren't same-site paths or http(s) URLs render without a link. The frontend contains no titles, product IDs or ordering.
 
 ## Search approach
 
