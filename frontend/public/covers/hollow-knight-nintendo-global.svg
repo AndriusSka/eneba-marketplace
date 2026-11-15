@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Hollow Knight cover art">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1F0A4D"/><stop offset="1" stop-color="#461EA3"/></linearGradient>
+    <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1"><stop offset="0.5" stop-color="#200B4E" stop-opacity="0"/><stop offset="1" stop-color="#200B4E" stop-opacity="0.92"/></linearGradient>
+    <radialGradient id="glow"><stop offset="0" stop-color="#5EEBC4" stop-opacity="0.7"/><stop offset="1" stop-color="#5EEBC4" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="300" height="400" fill="url(#sky)"/>
+  <path d="M0 400 V140 Q150 20 300 140 V400 Z" fill="#2F0F74"/>
+  <path d="M40 400 V190 Q150 90 260 190 V400 Z" fill="#200B4E"/>
+  <circle cx="150" cy="210" r="12" fill="url(#glow)"/>
+  <circle cx="150" cy="210" r="6" fill="#5EEBC4"/>
+  <ellipse cx="136" cy="214" rx="5" ry="7" fill="#FFFFFF"/><ellipse cx="164" cy="214" rx="5" ry="7" fill="#FFFFFF"/>
+  <polygon points="0,0 8,59 16,0" fill="#200B4E"/>
+  <polygon points="28,0 36,51 44,0" fill="#200B4E"/>
+  <polygon points="58,0 66,41 74,0" fill="#200B4E"/>
+  <polygon points="89,0 97,31 105,0" fill="#200B4E"/>
+  <polygon points="110,0 118,47 126,0" fill="#200B4E"/>
+  <polygon points="138,0 146,66 154,0" fill="#200B4E"/>
+  <polygon points="157,0 165,83 173,0" fill="#200B4E"/>
+  <polygon points="180,0 188,46 196,0" fill="#200B4E"/>
+  <polygon points="204,0 212,69 220,0" fill="#200B4E"/>
+  <polygon points="228,0 236,41 244,0" fill="#200B4E"/>
+  <polygon points="248,0 256,50 264,0" fill="#200B4E"/>
+  <polygon points="280,0 288,42 296,0" fill="#200B4E"/>
+  <polygon points="185,280 191,245 197,280" fill="#5EEBC4" opacity="0.85"/>
+  <polygon points="206,280 212,258 218,280" fill="#05CDB0" opacity="0.85"/>
+  <polygon points="112,280 118,257 124,280" fill="#5EEBC4" opacity="0.85"/>
+  <polygon points="69,280 75,262 81,280" fill="#05CDB0" opacity="0.85"/>
+  <polygon points="148,280 154,240 160,280" fill="#5EEBC4" opacity="0.85"/>
+  <polygon points="49,280 55,240 61,280" fill="#05CDB0" opacity="0.85"/>
+  <rect width="300" height="400" fill="url(#shade)"/>
+  <text x="22" y="297.3" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="34" letter-spacing="0.5" fill="#FFFFFF">HOLLOW</text>
+  <text x="22" y="334" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="34" letter-spacing="0.5" fill="#FFFFFF">KNIGHT</text>
+  <rect x="8" y="8" width="284" height="384" rx="2" fill="none" stroke="#A77EFE" stroke-opacity="0.35"/>
+</svg>

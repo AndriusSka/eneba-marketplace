@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Stardew Valley cover art">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2B0E6A"/><stop offset="1" stop-color="#A77EFE"/></linearGradient>
+    <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1"><stop offset="0.5" stop-color="#2F0F74" stop-opacity="0"/><stop offset="1" stop-color="#2F0F74" stop-opacity="0.92"/></linearGradient>
+    <radialGradient id="glow"><stop offset="0" stop-color="#5EEBC4" stop-opacity="0.7"/><stop offset="1" stop-color="#5EEBC4" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="300" height="400" fill="url(#sky)"/>
+  <circle cx="80" cy="90" r="60" fill="url(#glow)"/>
+  <circle cx="80" cy="90" r="30" fill="#F9D316"/>
+  <ellipse cx="80" cy="270" rx="200" ry="70" fill="#5825CC"/>
+  <ellipse cx="260" cy="280" rx="160" ry="60" fill="#5825CC" opacity="0.8"/>
+  <path d="M196 236 v-34 l22 -18 l22 18 v34 z" fill="#E5484D"/><rect x="211" y="214" width="14" height="22" fill="#2F0F74"/>
+  <rect x="0" y="255" width="300" height="145" fill="#2F0F74"/>
+  <path d="M-60 400 L150 255" stroke="#74BD4A" stroke-width="3" opacity="0.5"/>
+  <path d="M10 400 L150 255" stroke="#74BD4A" stroke-width="3" opacity="0.5"/>
+  <path d="M80 400 L150 255" stroke="#74BD4A" stroke-width="3" opacity="0.5"/>
+  <path d="M150 400 L150 255" stroke="#74BD4A" stroke-width="3" opacity="0.5"/>
+  <path d="M220 400 L150 255" stroke="#74BD4A" stroke-width="3" opacity="0.5"/>
+  <path d="M290 400 L150 255" stroke="#74BD4A" stroke-width="3" opacity="0.5"/>
+  <path d="M360 400 L150 255" stroke="#74BD4A" stroke-width="3" opacity="0.5"/>
+  <rect width="300" height="400" fill="url(#shade)"/>
+  <text x="22" y="297.3" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="34" letter-spacing="0.5" fill="#FFFFFF">STARDEW</text>
+  <text x="22" y="334" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="34" letter-spacing="0.5" fill="#FFFFFF">VALLEY</text>
+  <rect x="8" y="8" width="284" height="384" rx="2" fill="none" stroke="#A77EFE" stroke-opacity="0.35"/>
+</svg>

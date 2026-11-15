@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Sekiro: Shadows Die Twice cover art">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#341282"/><stop offset="1" stop-color="#CA6493"/></linearGradient>
+    <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1"><stop offset="0.5" stop-color="#1F0A4D" stop-opacity="0"/><stop offset="1" stop-color="#1F0A4D" stop-opacity="0.92"/></linearGradient>
+    <radialGradient id="glow"><stop offset="0" stop-color="#FFE04D" stop-opacity="0.7"/><stop offset="1" stop-color="#FFE04D" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="300" height="400" fill="url(#sky)"/>
+  <circle cx="170" cy="160" r="144" fill="url(#glow)"/>
+  <circle cx="170" cy="160" r="72" fill="#F9D316"/>
+  <polygon points="0,400 0,250 60,224 120,251 180,228 240,251 300,223 300,400" fill="#4618AC" opacity="0.9"/>
+  <path d="M300 40 C230 60 200 90 150 92 M230 62 C220 40 200 30 180 34 M200 84 C190 110 170 120 150 124" stroke="#1F0A4D" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <ellipse cx="247" cy="182" rx="4" ry="2.5" fill="#CA6493" opacity="0.72" transform="rotate(155 247 182)"/>
+  <ellipse cx="191" cy="81" rx="4" ry="2.5" fill="#CA6493" opacity="0.86" transform="rotate(42 191 81)"/>
+  <ellipse cx="121" cy="80" rx="4" ry="2.5" fill="#CA6493" opacity="0.56" transform="rotate(50 121 80)"/>
+  <ellipse cx="36" cy="149" rx="4" ry="2.5" fill="#CA6493" opacity="0.59" transform="rotate(118 36 149)"/>
+  <ellipse cx="75" cy="102" rx="4" ry="2.5" fill="#CA6493" opacity="0.57" transform="rotate(106 75 102)"/>
+  <ellipse cx="46" cy="223" rx="4" ry="2.5" fill="#CA6493" opacity="0.68" transform="rotate(103 46 223)"/>
+  <ellipse cx="212" cy="236" rx="4" ry="2.5" fill="#CA6493" opacity="0.74" transform="rotate(138 212 236)"/>
+  <ellipse cx="212" cy="23" rx="4" ry="2.5" fill="#CA6493" opacity="0.57" transform="rotate(177 212 23)"/>
+  <ellipse cx="197" cy="208" rx="4" ry="2.5" fill="#CA6493" opacity="0.70" transform="rotate(19 197 208)"/>
+  <ellipse cx="116" cy="242" rx="4" ry="2.5" fill="#CA6493" opacity="0.92" transform="rotate(79 116 242)"/>
+  <ellipse cx="212" cy="260" rx="4" ry="2.5" fill="#CA6493" opacity="0.94" transform="rotate(136 212 260)"/>
+  <ellipse cx="34" cy="203" rx="4" ry="2.5" fill="#CA6493" opacity="0.71" transform="rotate(45 34 203)"/>
+  <ellipse cx="117" cy="247" rx="4" ry="2.5" fill="#CA6493" opacity="0.55" transform="rotate(40 117 247)"/>
+  <ellipse cx="93" cy="180" rx="4" ry="2.5" fill="#CA6493" opacity="0.94" transform="rotate(112 93 180)"/>
+  <ellipse cx="62" cy="182" rx="4" ry="2.5" fill="#CA6493" opacity="0.78" transform="rotate(155 62 182)"/>
+  <ellipse cx="152" cy="72" rx="4" ry="2.5" fill="#CA6493" opacity="0.78" transform="rotate(51 152 72)"/>
+  <ellipse cx="172" cy="256" rx="4" ry="2.5" fill="#CA6493" opacity="0.59" transform="rotate(3 172 256)"/>
+  <ellipse cx="172" cy="177" rx="4" ry="2.5" fill="#CA6493" opacity="0.59" transform="rotate(168 172 177)"/>
+  <ellipse cx="166" cy="56" rx="4" ry="2.5" fill="#CA6493" opacity="0.77" transform="rotate(43 166 56)"/>
+  <ellipse cx="266" cy="264" rx="4" ry="2.5" fill="#CA6493" opacity="0.73" transform="rotate(152 266 264)"/>
+  <ellipse cx="254" cy="109" rx="4" ry="2.5" fill="#CA6493" opacity="0.73" transform="rotate(156 254 109)"/>
+  <ellipse cx="26" cy="202" rx="4" ry="2.5" fill="#CA6493" opacity="0.77" transform="rotate(2 26 202)"/>
+  <polygon points="0,400 0,292 50,280 100,293 150,277 200,292 250,275 300,291 300,400" fill="#1F0A4D" opacity="1"/>
+  <rect width="300" height="400" fill="url(#shade)"/>
+  <text x="22" y="260.6" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="34" letter-spacing="0.5" fill="#FFFFFF">SEKIRO:</text>
+  <text x="22" y="297.3" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="34" letter-spacing="0.5" fill="#FFFFFF">SHADOWS</text>
+  <text x="22" y="334" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="34" letter-spacing="0.5" fill="#FFFFFF">DIE TWICE</text>
+  <rect x="8" y="8" width="284" height="384" rx="2" fill="none" stroke="#A77EFE" stroke-opacity="0.35"/>
+</svg>

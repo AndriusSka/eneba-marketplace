@@ -2,7 +2,8 @@
 
 /*
  * Fixed demo catalog. Titles, release dates and MSRPs are real; descriptions are our own.
- * No cover art: covers point at abstract placeholders in frontend/public/placeholders/.
+ * No game art: each product's cover is our own SVG in frontend/public/covers/{slug}.svg, made by
+ * scripts/generate-covers.php (re-run it after adding or renaming a product).
  *
  * Product flags:
  *   out_of_stock  every offer gets 0 keys

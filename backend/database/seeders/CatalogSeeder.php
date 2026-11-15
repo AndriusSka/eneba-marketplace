@@ -13,8 +13,6 @@ use Illuminate\Support\Str;
  */
 class CatalogSeeder extends Seeder
 {
-    private const COVER_COUNT = 8;
-
     private const MIN_OFFERS = 2;
 
     private const MAX_OFFERS = 5;
@@ -43,14 +41,16 @@ class CatalogSeeder extends Seeder
         $sellerIds = DB::table('sellers')->orderBy('id')->pluck('id')->all();
 
         $productRows = [];
-        foreach ($catalog['products'] as $i => $p) {
+        foreach ($catalog['products'] as $p) {
+            // scripts/generate-covers.php builds the same slug, and writes frontend/public/covers/{slug}.svg.
+            $slug = Str::slug($p['title'].' '.$platformNames[$p['platform']].' '.$regionNames[$p['region']]);
             $productRows[] = [
-                'slug' => Str::slug($p['title'].' '.$platformNames[$p['platform']].' '.$regionNames[$p['region']]),
+                'slug' => $slug,
                 'title' => $p['title'],
                 'platform_id' => $platforms[$p['platform']],
                 'region_id' => $regions[$p['region']],
                 'description' => $p['description'],
-                'cover_url' => '/placeholders/cover-'.(($i % self::COVER_COUNT) + 1).'.svg',
+                'cover_url' => "/covers/{$slug}.svg",
                 'release_date' => $p['release_date'],
                 'msrp_cents' => $p['msrp_cents'],
                 'currency' => 'EUR',

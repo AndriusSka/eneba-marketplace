@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Ghost of Tsushima Director&apos;s Cut cover art">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#200B4E"/><stop offset="1" stop-color="#4B1DB1"/></linearGradient>
+    <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1"><stop offset="0.5" stop-color="#1F0A4D" stop-opacity="0"/><stop offset="1" stop-color="#1F0A4D" stop-opacity="0.92"/></linearGradient>
+    <radialGradient id="glow"><stop offset="0" stop-color="#CA6493" stop-opacity="0.7"/><stop offset="1" stop-color="#CA6493" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="300" height="400" fill="url(#sky)"/>
+  <circle cx="170" cy="160" r="144" fill="url(#glow)"/>
+  <circle cx="170" cy="160" r="72" fill="#E5484D"/>
+  <polygon points="0,400 0,255 60,223 120,251 180,216 240,258 300,223 300,400" fill="#311078" opacity="0.9"/>
+  <path d="M300 40 C230 60 200 90 150 92 M230 62 C220 40 200 30 180 34 M200 84 C190 110 170 120 150 124" stroke="#1F0A4D" stroke-width="7" fill="none" stroke-linecap="round"/>
+  <ellipse cx="79" cy="175" rx="4" ry="2.5" fill="#CA6493" opacity="0.73" transform="rotate(58 79 175)"/>
+  <ellipse cx="63" cy="71" rx="4" ry="2.5" fill="#CA6493" opacity="0.90" transform="rotate(172 63 71)"/>
+  <ellipse cx="104" cy="267" rx="4" ry="2.5" fill="#CA6493" opacity="0.56" transform="rotate(23 104 267)"/>
+  <ellipse cx="172" cy="162" rx="4" ry="2.5" fill="#CA6493" opacity="0.80" transform="rotate(5 172 162)"/>
+  <ellipse cx="50" cy="111" rx="4" ry="2.5" fill="#CA6493" opacity="0.84" transform="rotate(116 50 111)"/>
+  <ellipse cx="278" cy="104" rx="4" ry="2.5" fill="#CA6493" opacity="0.66" transform="rotate(168 278 104)"/>
+  <ellipse cx="149" cy="41" rx="4" ry="2.5" fill="#CA6493" opacity="0.83" transform="rotate(72 149 41)"/>
+  <ellipse cx="87" cy="210" rx="4" ry="2.5" fill="#CA6493" opacity="0.68" transform="rotate(127 87 210)"/>
+  <ellipse cx="67" cy="191" rx="4" ry="2.5" fill="#CA6493" opacity="0.68" transform="rotate(105 67 191)"/>
+  <ellipse cx="102" cy="180" rx="4" ry="2.5" fill="#CA6493" opacity="0.63" transform="rotate(179 102 180)"/>
+  <ellipse cx="200" cy="136" rx="4" ry="2.5" fill="#CA6493" opacity="0.72" transform="rotate(140 200 136)"/>
+  <ellipse cx="120" cy="149" rx="4" ry="2.5" fill="#CA6493" opacity="0.83" transform="rotate(46 120 149)"/>
+  <ellipse cx="46" cy="247" rx="4" ry="2.5" fill="#CA6493" opacity="0.57" transform="rotate(19 46 247)"/>
+  <ellipse cx="267" cy="230" rx="4" ry="2.5" fill="#CA6493" opacity="0.92" transform="rotate(145 267 230)"/>
+  <ellipse cx="78" cy="157" rx="4" ry="2.5" fill="#CA6493" opacity="0.92" transform="rotate(80 78 157)"/>
+  <ellipse cx="137" cy="182" rx="4" ry="2.5" fill="#CA6493" opacity="0.56" transform="rotate(77 137 182)"/>
+  <ellipse cx="162" cy="148" rx="4" ry="2.5" fill="#CA6493" opacity="0.74" transform="rotate(172 162 148)"/>
+  <ellipse cx="89" cy="259" rx="4" ry="2.5" fill="#CA6493" opacity="0.89" transform="rotate(64 89 259)"/>
+  <ellipse cx="234" cy="294" rx="4" ry="2.5" fill="#CA6493" opacity="0.87" transform="rotate(127 234 294)"/>
+  <ellipse cx="177" cy="177" rx="4" ry="2.5" fill="#CA6493" opacity="0.77" transform="rotate(102 177 177)"/>
+  <ellipse cx="158" cy="99" rx="4" ry="2.5" fill="#CA6493" opacity="0.81" transform="rotate(59 158 99)"/>
+  <ellipse cx="233" cy="64" rx="4" ry="2.5" fill="#CA6493" opacity="0.95" transform="rotate(179 233 64)"/>
+  <polygon points="0,400 0,291 50,280 100,296 150,277 200,292 250,274 300,290 300,400" fill="#1F0A4D" opacity="1"/>
+  <rect width="300" height="400" fill="url(#shade)"/>
+  <text x="22" y="282.2" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="24" letter-spacing="0.5" fill="#FFFFFF">GHOST OF</text>
+  <text x="22" y="308.1" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="24" letter-spacing="0.5" fill="#FFFFFF">TSUSHIMA</text>
+  <text x="22" y="334" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="24" letter-spacing="0.5" fill="#FFFFFF">DIRECTOR&apos;S CUT</text>
+  <rect x="8" y="8" width="284" height="384" rx="2" fill="none" stroke="#A77EFE" stroke-opacity="0.35"/>
+</svg>
