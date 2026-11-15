@@ -127,7 +127,7 @@ Tailwind's default 4px spacing scale. Values seen in the screenshots, all **Esti
   - "From": `text-xs` `fg-muted`, then the MSRP struck through and the `discount` percentage. The MSRP and discount appear only when the price is below MSRP.
   - Price: `text-price`.
 - **Out of stock:** the price line is replaced by "Out of stock" (`fg-muted`), and the cover drops to 50% opacity (**Estimate**, not in the screenshots).
-- **Hover buttons:** Eneba shows "Add to cart" and "View offers" on hover. We show only "View offers", because a card stands for a product, not an offer.
+- **Hover buttons:** as on Eneba, hover or keyboard focus opens a panel under the card (`surface-card`, the 1px `line-strong` outline continues around it) with a full-width primary "Add to cart" and a secondary "View offers" (`sm` size). "Add to cart" adds the offer behind the shown "From" price (`from_offer_id`); a sold-out card shows only "View offers". The panel overlaps the content below, so the grid never moves.
 
 ### Filter sidebar (03, 04)
 

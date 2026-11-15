@@ -9,8 +9,9 @@ import { MsrpDiscount, Price } from '../../components/Price'
 import { Skeleton } from '../../components/Skeleton'
 import { formatCents } from '../../lib/money'
 import { NotFoundPage } from '../../pages/NotFoundPage'
+import { AddedMessage } from '../cart/AddedMessage'
 import { cartStore, type AddResult } from '../cart/cartStore'
-import { AddedMessage, OfferRow } from './OfferRow'
+import { OfferRow } from './OfferRow'
 
 const releaseFormat = new Intl.DateTimeFormat('en-IE', { dateStyle: 'long', timeZone: 'UTC' })
 

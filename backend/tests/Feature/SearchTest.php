@@ -88,7 +88,7 @@ describe('suggest', function () {
     it('returns product summaries', function () {
         expect(array_keys(suggest('elden')->json('data.0')))->toBe([
             'id', 'slug', 'title', 'cover_url', 'platform', 'region', 'release_date', 'msrp_cents',
-            'currency', 'from_price_cents', 'discount_percent', 'in_stock',
+            'currency', 'from_price_cents', 'from_offer_id', 'discount_percent', 'in_stock',
         ]);
     });
 

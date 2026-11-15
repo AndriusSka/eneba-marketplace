@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
 import type { Offer } from '../../api/products'
 import { BestPricePill } from '../../components/Badge'
 import { Button } from '../../components/Button'
 import { MsrpDiscount, Price } from '../../components/Price'
-import { cartStore, MAX_LINES, type AddResult } from '../cart/cartStore'
+import { AddedMessage } from '../cart/AddedMessage'
+import { cartStore, type AddResult } from '../cart/cartStore'
 
 type Props = {
   offer: Offer
@@ -62,26 +62,6 @@ export function OfferRow({ offer, msrpCents, best = false }: Props) {
         </div>
       </div>
     </li>
-  )
-}
-
-/** What happened after "Add to cart": shared by the offer rows and the product page's buy box. */
-export function AddedMessage({ result }: { result: AddResult }) {
-  if (!result.ok) {
-    const message = {
-      cart_full: `Your cart is full (${MAX_LINES} items).`,
-      max_reached: 'You already have the most you can buy in your cart.',
-      out_of_stock: 'Out of stock.',
-    }[result.reason]
-    return <span className="text-danger">{message}</span>
-  }
-  return (
-    <span className="text-teal">
-      {result.quantity === 1 ? 'Added' : `${result.quantity} in cart`} ·{' '}
-      <Link to="/cart" className="font-semibold text-fg underline hover:text-accent">
-        View cart
-      </Link>
-    </span>
   )
 }
 

@@ -32,6 +32,7 @@ it('returns Store card fields, including the from-price', function () {
         'platform' => ['slug' => 'steam', 'name' => 'Steam'],
         'region' => ['slug' => 'global', 'name' => 'Global'],
         'from_price_cents' => 3449,
+        'from_offer_id' => $this->catalog->offers['A1']->id,
         'discount_percent' => 42,
         'in_stock' => true,
     ]);

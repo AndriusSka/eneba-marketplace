@@ -42,6 +42,7 @@ describe('response shape', function () {
             'currency' => 'EUR',
             // 2999 is cheaper, but all its keys are sold.
             'from_price_cents' => 3449,
+            'from_offer_id' => $this->catalog->offers['A1']->id,
             'discount_percent' => 42, // floor(100 * 2550 / 5999)
             'in_stock' => true,
         ]);
@@ -50,13 +51,27 @@ describe('response shape', function () {
     it('ignores inactive offers when computing the from-price', function () {
         $cyberpunk = collect(listProducts()->json('data'))->firstWhere('slug', 'product-b');
 
-        expect($cyberpunk['from_price_cents'])->toBe(2999);
+        expect($cyberpunk['from_price_cents'])->toBe(2999)
+            ->and($cyberpunk['from_offer_id'])->toBe($this->catalog->offers['B1']->id);
+    });
+
+    it('names the offer behind the from-price, the cheapest one, then the lowest id', function () {
+        $fromOfferOfA = fn () => collect(listProducts()->json('data'))->firstWhere('slug', 'product-a')['from_offer_id'];
+
+        $this->catalog->offers['A2']->update(['price_cents' => 3000]);
+        expect($fromOfferOfA())->toBe($this->catalog->offers['A2']->id);
+
+        // A tie: the lower id wins, which is also the product page's first offer.
+        $this->catalog->offers['A2']->update(['price_cents' => 3449]);
+        expect($fromOfferOfA())->toBe($this->catalog->offers['A1']->id)
+            ->and($this->getJson('/api/products/product-a')->json('data.offers.0.id'))->toBe($this->catalog->offers['A1']->id);
     });
 
     it('marks a product whose offers have no available keys as out of stock', function () {
         $hollow = collect(listProducts()->json('data'))->firstWhere('slug', 'product-d');
 
         expect($hollow['from_price_cents'])->toBeNull()
+            ->and($hollow['from_offer_id'])->toBeNull()
             ->and($hollow['discount_percent'])->toBeNull()
             ->and($hollow['in_stock'])->toBeFalse();
     });

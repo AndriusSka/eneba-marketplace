@@ -75,7 +75,7 @@ homepage_blocks, banners      (homepage sources, standalone)
 
 Derived values (not stored):
 - **Stock of an offer** = `COUNT(keys WHERE status='available')`.
-- **Product "from" price** = the lowest `price_cents` among active offers that have stock.
+- **Product "from" price** = the lowest `price_cents` among active offers that have stock. The offer it comes from is exposed as `from_offer_id`.
 - **Sales of a product** = `SUM(order_items.quantity)` over its offers.
 - **Discount** = `1 − price_cents / msrp_cents`.
 
@@ -144,7 +144,7 @@ Invalid parameters return 422.
 
 **Fields**
 
-- **Each product in `data`** has `id, slug, title, cover_url, platform{slug,name}, region{slug,name}, release_date|null, msrp_cents, currency, from_price_cents|null, discount_percent|null, in_stock`.
+- **Each product in `data`** has `id, slug, title, cover_url, platform{slug,name}, region{slug,name}, release_date|null, msrp_cents, currency, from_price_cents|null, from_offer_id|null, discount_percent|null, in_stock`. `from_offer_id` is the offer behind the from-price (lowest id on a tie, so it is the product page's `offers[0]`); a card's "Add to cart" adds it.
 - **Facets** list every platform and every region (zero counts included), sorted by name. `price` is `{min_cents, max_cents}`, or both `null` when nothing is in stock.
 - **`discount_percent`** is `floor(100 · (msrp − price) / msrp)`. It is `null` unless the price is at least 1% below MSRP. The rule lives in `App\Support\Discount`.
 - **`GET /api/products/{slug}`** adds `description` and `offers[]` to the product fields.
