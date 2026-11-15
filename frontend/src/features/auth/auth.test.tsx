@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider, useLocation, type RouteObject } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { User } from '../../api/auth'
+import { ORDER_KEY, ORDERS_KEY } from '../../api/orders'
 import { clearCookies, json, stubRoutes } from '../../test/fetchRoutes'
 import { LoginPage } from './LoginPage'
 import { RegisterPage } from './RegisterPage'
@@ -26,6 +27,17 @@ function renderAt(path: string, routes: RouteObject[]) {
       <RouterProvider router={router} />
     </QueryClientProvider>,
   )
+  return client
+}
+
+/** Puts a previous user's order list and order (with its keys) in the cache. */
+function cacheOrdersOfAnotherUser(client: QueryClient) {
+  client.setQueryData([ORDERS_KEY], [{ id: 12 }])
+  client.setQueryData([ORDER_KEY, '12'], { id: 12, items: [{ keys: [{ id: 1, code: 'AAAAA-BBBBB-CCCCC' }] }] })
+}
+
+function cachedOrders(client: QueryClient) {
+  return [client.getQueryData([ORDERS_KEY]), client.getQueryData([ORDER_KEY, '12'])]
 }
 
 const authRoutes: RouteObject[] = [
@@ -112,6 +124,17 @@ describe('LoginPage', () => {
     expect(loginCall?.[1]?.body).toBe('{"email":"ada@example.com","password":"password"}')
   })
 
+  it('drops orders cached before the sign-in, so a new user never sees the previous user’s keys', async () => {
+    stubRoutes({ 'GET /api/me': UNAUTHENTICATED, 'POST /api/login': () => json(200, { data: ada }) })
+    const client = renderAt('/login?next=%2Forders%2F12', authRoutes)
+    cacheOrdersOfAnotherUser(client)
+
+    fillAndSubmit('ada@example.com', 'password')
+
+    expect(await screen.findByTestId('where')).toHaveTextContent('/orders/12')
+    expect(cachedOrders(client)).toEqual([undefined, undefined])
+  })
+
   it('ignores a ?next= that leaves the site', async () => {
     stubRoutes({ 'GET /api/me': UNAUTHENTICATED, 'POST /api/login': () => json(200, { data: ada }) })
     renderAt('/login?next=%2F%2Fevil.example', authRoutes)
@@ -180,14 +203,16 @@ describe('UserMenu', () => {
     expect(screen.getByRole('link', { name: 'Register' })).toHaveAttribute('href', '/register?next=%2Fproduct%2Ffifa%3Fx%3D1')
   })
 
-  it('shows the user and signs them out', async () => {
+  it('shows the user and signs them out, dropping their cached orders', async () => {
     stubRoutes({ 'GET /api/me': () => json(200, { data: ada }), 'POST /api/logout': () => json(204) })
-    renderAt('/store', routes)
+    const client = renderAt('/store', routes)
+    cacheOrdersOfAnotherUser(client)
 
     expect(await screen.findByText('Ada Lovelace')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))
 
     expect(await screen.findByRole('link', { name: 'Sign in' })).toBeInTheDocument()
     expect(screen.queryByText('Ada Lovelace')).not.toBeInTheDocument()
+    expect(cachedOrders(client)).toEqual([undefined, undefined])
   })
 })

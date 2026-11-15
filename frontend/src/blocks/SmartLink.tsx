@@ -1,16 +1,19 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
+import { sameSitePath } from '../lib/sameSitePath'
 
 type Props = { href: string; className?: string; children: ReactNode }
 
 /**
  * A link whose URL comes from the database. Same-site paths go through the router and http(s) URLs
- * are plain links. Any other scheme (e.g. "javascript:") renders the content without a link.
+ * are plain links. Anything else (e.g. "javascript:", or "/\t/evil.example", which the browser reads
+ * as "//evil.example") renders the content without a link.
  */
 export function SmartLink({ href, className, children }: Props) {
-  if (href.startsWith('/') && !href.startsWith('//') && !href.includes('\\')) {
+  const path = sameSitePath(href)
+  if (path !== null) {
     return (
-      <Link to={href} className={className}>
+      <Link to={path} className={className}>
         {children}
       </Link>
     )

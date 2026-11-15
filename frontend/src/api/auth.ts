@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query'
 import { ApiError, getJson, sendJson } from './client'
 import { isNumber, isObject, isString } from './guards'
 import { ORDER_KEY, ORDERS_KEY } from './orders'
@@ -38,6 +38,18 @@ export async function fetchMe(signal?: AbortSignal): Promise<User | null> {
   }
 }
 
+/**
+ * Records who is signed in: a user, or null. Called on every sign-in, registration, sign-out and
+ * expired session. Orders and their key codes belong to one user, so they are dropped every time:
+ * if someone else signs in on this tab, they never see the previous user's keys, not even from cache.
+ * The cart stays: guests have carts too.
+ */
+export function setSignedInUser(queryClient: QueryClient, user: User | null) {
+  queryClient.removeQueries({ queryKey: [ORDERS_KEY] })
+  queryClient.removeQueries({ queryKey: [ORDER_KEY] })
+  queryClient.setQueryData(ME_QUERY_KEY, user)
+}
+
 export function useMe() {
   return useQuery({
     queryKey: ME_QUERY_KEY,
@@ -50,7 +62,7 @@ export function useLogin() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (input: LoginInput) => parseUser(await sendJson('POST', '/api/login', input)),
-    onSuccess: (user) => queryClient.setQueryData(ME_QUERY_KEY, user),
+    onSuccess: (user) => setSignedInUser(queryClient, user),
   })
 }
 
@@ -58,7 +70,7 @@ export function useRegister() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (input: RegisterInput) => parseUser(await sendJson('POST', '/api/register', input)),
-    onSuccess: (user) => queryClient.setQueryData(ME_QUERY_KEY, user),
+    onSuccess: (user) => setSignedInUser(queryClient, user),
   })
 }
 
@@ -75,12 +87,6 @@ export function useLogout() {
         }
       }
     },
-    // Per-user data goes with the session, so the next person on this browser never sees it.
-    // The cart stays: guests have carts too.
-    onSuccess: () => {
-      queryClient.setQueryData(ME_QUERY_KEY, null)
-      queryClient.removeQueries({ queryKey: [ORDERS_KEY] })
-      queryClient.removeQueries({ queryKey: [ORDER_KEY] })
-    },
+    onSuccess: () => setSignedInUser(queryClient, null),
   })
 }

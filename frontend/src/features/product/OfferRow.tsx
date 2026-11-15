@@ -65,7 +65,8 @@ export function OfferRow({ offer, msrpCents, best = false }: Props) {
   )
 }
 
-function AddedMessage({ result }: { result: AddResult }) {
+/** What happened after "Add to cart": shared by the offer rows and the product page's buy box. */
+export function AddedMessage({ result }: { result: AddResult }) {
   if (!result.ok) {
     const message = {
       cart_full: `Your cart is full (${MAX_LINES} items).`,

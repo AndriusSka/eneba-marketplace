@@ -52,7 +52,9 @@ function BannerTile({ banner, large, sizing }: { banner: Banner; large: boolean;
     >
       {/* The title and subtitle are real text below, so the image itself is decorative. */}
       <img src={banner.image_url} alt="" className="absolute inset-0 h-full w-full object-cover" />
-      <div className="absolute inset-x-0 bottom-0 bg-scrim p-4">
+      {/* A scrim that fades out upwards, so the art reads as one picture (as on Eneba's banners)
+          instead of being cut by a solid caption band. The art leaves this bottom strip calm. */}
+      <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-scrim from-50% to-transparent p-4 pt-12">
         <p className={`${large ? 'text-lg lg:text-h2' : 'text-lg'} font-bold text-fg`}>{banner.title}</p>
         {banner.subtitle !== null && <p className="mt-1 text-sm text-fg">{banner.subtitle}</p>}
       </div>

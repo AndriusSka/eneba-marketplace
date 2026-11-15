@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useRef, useState, type FormEvent } from 'react'
 import { Navigate, useNavigate } from 'react-router'
-import { ME_QUERY_KEY } from '../../api/auth'
+import { setSignedInUser } from '../../api/auth'
 import { CART_QUOTE_KEY, toItems, type CartQuote } from '../../api/cart'
 import { ApiError } from '../../api/client'
 import { useCheckout } from '../../api/orders'
@@ -142,7 +142,7 @@ function PaymentForm({
 
       if (error.status === 401) {
         // The session expired. RequireAuth sends the user to sign in and back here; the cart is kept.
-        queryClient.setQueryData(ME_QUERY_KEY, null)
+        setSignedInUser(queryClient, null)
       } else if (error.status === 402) {
         setErrors({ card: error.message })
       } else if (error.status === 409) {

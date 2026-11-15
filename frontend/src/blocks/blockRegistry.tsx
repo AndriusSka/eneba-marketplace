@@ -5,11 +5,19 @@ import { isProductSummary, type ProductSummary } from '../api/products'
 import { HeroBanner } from './HeroBanner'
 import { ProductCarousel } from './ProductCarousel'
 
-type BlockRenderer = (block: HomeBlock) => ReactNode
+type BlockRenderer = {
+  /** Whether the block's data passes the type's guard. */
+  accepts: (block: HomeBlock) => boolean
+  /** The block's component, or null when the data fails the guard. */
+  render: (block: HomeBlock) => ReactNode
+}
 
 /** Pairs a block type's data guard with its component. Data that fails the guard renders nothing. */
 function defineBlock<T>(isData: (data: unknown) => data is T, render: (block: HomeBlock, data: T) => ReactNode): BlockRenderer {
-  return (block) => (isData(block.data) ? render(block, block.data) : null)
+  return {
+    accepts: (block) => isData(block.data),
+    render: (block) => (isData(block.data) ? render(block, block.data) : null),
+  }
 }
 
 const isBanners = (data: unknown): data is Banner[] => isArrayOf(data, isBanner)
@@ -29,9 +37,13 @@ const blockRegistry: Readonly<Record<string, BlockRenderer>> = {
   deals: defineBlock(isProducts, productRow),
 }
 
-/** Renders one homepage block, or nothing when its type is unknown or its data is malformed. */
-export function HomeBlockView({ block }: { block: HomeBlock }) {
+/** The block's renderer, or undefined for an unknown type. */
+export function rendererFor(block: HomeBlock): BlockRenderer | undefined {
   // Object.hasOwn, so a type like "toString" can't reach Object.prototype.
-  const render = Object.hasOwn(blockRegistry, block.type) ? blockRegistry[block.type] : undefined
-  return render ? render(block) : null
+  return Object.hasOwn(blockRegistry, block.type) ? blockRegistry[block.type] : undefined
+}
+
+/** Whether HomeBlockView would draw anything: a known type with valid data. */
+export function canRenderBlock(block: HomeBlock): boolean {
+  return rendererFor(block)?.accepts(block) ?? false
 }

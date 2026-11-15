@@ -196,7 +196,7 @@ Adding a block type takes a provider class, one registry entry, a React componen
 
 **Frontend**
 
-`HomePage` makes one `useQuery(['home'])` call, which checks only the block envelope, and renders the blocks in API order. Each block is wrapped in `BlockErrorBoundary`, and `HomeBlockView` looks its type up in `blockRegistry` (`src/blocks/blockRegistry.tsx`). Each entry pairs a data guard with a component (`HeroBanner`, `ProductCarousel`).
+`HomePage` makes one `useQuery(['home'])` call, which checks only the block envelope. It drops the blocks `canRenderBlock` rejects and renders the rest in API order, each in its own full-width band, with every second band on `surface` (by position, not type). Each block is wrapped in `BlockErrorBoundary`, and `HomeBlockView` (`src/blocks/HomeBlockView.tsx`) looks its type up in `blockRegistry` (`src/blocks/blockRegistry.tsx`). Each entry pairs a data guard with a component (`HeroBanner`, `ProductCarousel`).
 
 A block renders `null` when:
 - its type is unknown (looked up with `Object.hasOwn`, so `toString` doesn't match), or

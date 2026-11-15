@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { Order } from '../../api/orders'
+import { ORDER_KEY, ORDERS_KEY, type Order } from '../../api/orders'
 import { itemsOf, quoteFor } from '../../test/cartQuote'
 import { clearCookies, headersOf, json, stubRoutes } from '../../test/fetchRoutes'
 import { RequireAuth } from '../auth/RequireAuth'
@@ -41,8 +41,11 @@ function Where() {
   return <p data-testid="where">{location.pathname}</p>
 }
 
-function renderCheckout() {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
+function newClient() {
+  return new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
+}
+
+function renderCheckout(client = newClient()) {
   const router = createMemoryRouter(
     [
       { element: <RequireAuth />, children: [{ path: '/checkout', element: <CheckoutPage /> }] },
@@ -198,15 +201,20 @@ describe('CheckoutPage', () => {
     expect(cartStore.get()).toEqual([{ offerId: 1, quantity: 2 }])
   })
 
-  it('sends a guest whose session expired back to sign in, keeping the cart', async () => {
+  it('sends a guest whose session expired back to sign in, keeping the cart but not the cached orders', async () => {
     stubCheckout(() => json(401, { message: 'Unauthenticated.' }))
-    const router = renderCheckout()
+    const client = newClient()
+    client.setQueryData([ORDER_KEY, '41'], order)
+    client.setQueryData([ORDERS_KEY], [order])
+    const router = renderCheckout(client)
 
     await payWith('4242424242424242')
 
     await vi.waitFor(() => expect(router.state.location.pathname).toBe('/login'))
     expect(router.state.location.search).toBe('?next=%2Fcheckout')
     expect(cartStore.get()).toEqual([{ offerId: 1, quantity: 2 }])
+    expect(client.getQueryData([ORDER_KEY, '41'])).toBeUndefined()
+    expect(client.getQueryData([ORDERS_KEY])).toBeUndefined()
   })
 
   it('sends an empty cart to the cart page', async () => {

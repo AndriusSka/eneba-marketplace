@@ -50,15 +50,17 @@ final class HomepageService
     {
         $context = ['block_id' => $block->id, 'type' => $block->type];
 
-        $provider = $this->registry->get($block->type);
-
-        if ($provider === null) {
-            Log::warning('Homepage block skipped: unknown type', $context);
-
-            return null;
-        }
-
+        // Building the provider is inside the try too: the container constructs it and its
+        // dependencies, and a failure there must cost only this block, not the whole page.
         try {
+            $provider = $this->registry->get($block->type);
+
+            if ($provider === null) {
+                Log::warning('Homepage block skipped: unknown type', $context);
+
+                return null;
+            }
+
             return $provider->fetch($this->config($block));
         } catch (Throwable $e) {
             Log::error('Homepage block skipped: provider failed', $context + ['exception' => $e]);

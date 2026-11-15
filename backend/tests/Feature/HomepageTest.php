@@ -101,6 +101,22 @@ it('leaves out a block whose provider throws, logs it, and still returns the oth
     );
 });
 
+it('leaves out a block whose provider cannot be built, logs it, and still returns the others', function () {
+    Log::spy();
+    app()->bind(DealsProvider::class, fn () => throw new RuntimeException('cannot build deals'));
+    block('hero_banner', 1);
+    $deals = block('deals', 2);
+    block('best_sellers', 3);
+
+    expect(typesOf(home()))->toBe(['hero_banner', 'best_sellers']);
+
+    Log::shouldHaveReceived('error')->once()->withArgs(
+        fn (string $message, array $context) => $message === 'Homepage block skipped: provider failed'
+            && $context['block_id'] === $deals->id
+            && $context['exception'] instanceof RuntimeException,
+    );
+});
+
 it('leaves out a block with nothing to show', function () {
     Banner::query()->update(['is_active' => false]);
     block('hero_banner', 1);
@@ -130,6 +146,8 @@ it('only passes on link_url when it is a same-site path', function (mixed $link,
     'absolute URL' => ['https://example.com', null],
     'protocol-relative URL' => ['//example.com', null],
     'backslash trick' => ['/\\example.com', null],
+    'tab trick (browsers drop the tab)' => ["/\t/example.com", null],
+    'newline trick' => ["/\n/example.com", null],
     'javascript URL' => ['javascript:alert(1)', null],
     'not a string' => [42, null],
 ]);
