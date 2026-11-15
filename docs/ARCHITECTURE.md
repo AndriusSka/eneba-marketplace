@@ -24,7 +24,7 @@ This document covers how [SPEC.md](SPEC.md) is built. The build order is in [PLA
                  └──────────────────────────────┘      └───────────────────────┘
 ```
 
-The browser only ever talks to the Vercel origin, and Vercel proxies API calls to Render. So the session cookie is first-party, Sanctum's cookie-based SPA auth works, and no CORS setup is needed.
+The browser only ever talks to the Vercel origin, and Vercel proxies API calls to Render. So the session cookie is first-party, Sanctum's cookie-based SPA auth works, and CORS stays closed (see [Authentication](#authentication)).
 
 ## Repository layout
 
@@ -287,18 +287,43 @@ The cart lives in localStorage as `[{offerId, quantity}]`. The client never send
 
 ## Authentication
 
-- Sanctum **SPA mode** with a session cookie (`httpOnly`, `Secure`, `SameSite=Lax`) set on the Vercel origin through the rewrite. No token is stored in JavaScript.
-- Login and register first call `GET /sanctum/csrf-cookie`. The fetch client then sends `X-XSRF-TOKEN` (read from the `XSRF-TOKEN` cookie) on every request that changes state.
-- `SANCTUM_STATEFUL_DOMAINS=<app>.vercel.app,localhost:5173`. `TrustProxies` trusts all proxies (Vercel → Render's load balancer), so the scheme and host are detected correctly.
-- Rate limiting: login is limited to 5 attempts per minute per email+IP (Laravel's built-in limiter).
-- Frontend: a `RequireAuth` route wrapper checks `/api/me` through TanStack Query. If the user isn't signed in, it redirects to `/login?next=<path>`.
+- Sanctum **SPA mode** with a session cookie (`httpOnly`, `Secure`, `SameSite=Lax`) set on the Vercel origin through the rewrite. No token is stored in JavaScript. Sanctum's API tokens are not used: the frontend and backend are on different hosts, but the browser only ever sees the Vercel origin, so the cookie is first-party.
+- **CSRF.** Before its first state-changing request, `sendJson` in `src/api/client.ts` calls `GET /sanctum/csrf-cookie` if there is no `XSRF-TOKEN` cookie. It then sends that cookie's value as `X-XSRF-TOKEN`. On a 419 (the token expired with the session) it fetches a new cookie and retries once.
+- **Stateful domains.** `SANCTUM_STATEFUL_DOMAINS` defaults to `localhost:5173` in `config/sanctum.php`. The `Dockerfile` sets it to the Vercel host. `TrustProxies` trusts all proxies (Vercel → Render's load balancer), so the scheme and host are detected correctly.
+- **Sign-in.**
+  - Emails are lower-cased and trimmed.
+  - A failed sign-in returns 422 with the same message for an unknown email and a wrong password.
+  - After 5 failures a minute per email+IP, sign-in returns 429 with the message on the `email` field, even for the right password.
+  - A successful sign-in regenerates the session id.
+  - Logout invalidates the session on the server.
+  - Passwords are bcrypt-hashed by the `hashed` cast on `User`.
+- **CORS is closed.** `config/cors.php` has `allowed_origins => []` and `supports_credentials => false`, so no origin gets an `Access-Control-Allow-Origin` header, preflights included. Laravel's unpublished default allowed every origin on `api/*`. It was live from M0 to M5 without anyone choosing it. The SPA never needs CORS, because it is same-origin through the Vercel rewrite and the Vite proxy.
+- **Frontend.**
+  - The signed-in state is the TanStack Query `['me']` query: a user, or `null` (a 401 from `/api/me` is an answer, not an error).
+  - `RequireAuth` (`features/auth/`) redirects a guest to `/login?next=<path>`.
+  - The header's "Sign in | Register" links carry `next` too.
+  - `safeNext` accepts only a path on this site, which blocks open redirects such as `//evil.com`.
+
+**Where the credential lives, and the trade-off.** The credential is the Laravel session cookie. It is `httpOnly`, so JavaScript can't read it, and the session row lives in Postgres. Nothing is kept in localStorage or React state. On a reload, the SPA asks `/api/me` and the browser attaches the cookie. The only cookie JavaScript reads is `XSRF-TOKEN`, and it is not a credential.
+
+What this gains, compared with a bearer token in localStorage:
+- An XSS bug can't read the credential and take it away.
+- Logout ends the session on the server.
+- The client has no token to refresh or rotate.
+
+What it costs:
+- CSRF has to be handled: the cookie round trip, the header and the 419 retry. `SameSite=Lax` is a second layer.
+- It works only while the API is same-origin. Calling Render directly from the browser would break it.
+- Every authenticated request reads a session row.
+- Non-browser clients would need tokens.
+- An XSS can still send requests *as* the user while the page is open. It just can't keep the credential.
 
 ## Deployment
 
 | Piece | Setup |
 |---|---|
 | **Neon** | Free project with Postgres 16 in AWS Frankfurt (`aws-eu-central-1`, next to Render; the region can't be changed later). Branches: `main` (production), `dev` (local app) and `test` (local test suite, wiped by tests). `pg_trgm` 1.6 is available; `CREATE EXTENSION pg_trgm` runs in a migration. The app uses the **direct (non-pooled)** connection string with `sslmode=require`. At this traffic level pooling isn't needed, and the direct connection avoids PgBouncer issues with prepared statements. Free computes suspend after 5 minutes idle. |
-| **Render** | Free web service in Frankfurt, built from `backend/Dockerfile` (based on `serversideup/php:8.4-fpm-nginx`, nginx on port 8080). There is no custom entrypoint: the image's Laravel automations (`AUTORUN_ENABLED=true`) run `migrate --force --seed` (waiting up to 60 s for the database) and `optimize` on every container start. `AUTORUN_LARAVEL_MIGRATION_SEED=true` adds `--seed`. The seeder fills an empty database on the first deploy and skips once products exist, because Render free has no shell and no pre-deploy hook. Non-secret defaults (`APP_ENV=production`, `APP_DEBUG=false`, `LOG_CHANNEL=stderr`, `DB_CONNECTION=pgsql`, `SESSION_DRIVER=database`, `CACHE_STORE=database`) are baked into the image. Dashboard env: `APP_KEY`, `APP_URL`, `DB_URL`, `SESSION_SECURE_COOKIE=true`, `PORT=8080`, and `SANCTUM_STATEFUL_DOMAINS` from M5. |
+| **Render** | Free web service in Frankfurt, built from `backend/Dockerfile` (based on `serversideup/php:8.4-fpm-nginx`, nginx on port 8080). There is no custom entrypoint: the image's Laravel automations (`AUTORUN_ENABLED=true`) run `migrate --force --seed` (waiting up to 60 s for the database) and `optimize` on every container start. `AUTORUN_LARAVEL_MIGRATION_SEED=true` adds `--seed`. The seeder fills an empty database on the first deploy and skips once products exist, because Render free has no shell and no pre-deploy hook. Non-secret defaults (`APP_ENV=production`, `APP_DEBUG=false`, `LOG_CHANNEL=stderr`, `DB_CONNECTION=pgsql`, `SESSION_DRIVER=database`, `CACHE_STORE=database`, and `SANCTUM_STATEFUL_DOMAINS=<app>.vercel.app` from M5) are baked into the image. Dashboard env: `APP_KEY`, `APP_URL`, `DB_URL`, `SESSION_SECURE_COOKIE=true`, `PORT=8080`. |
 | **Vercel** | Project root `frontend/`, build `npm run build`, output `dist/`. `vercel.json` is shown below. |
 | **Keep-warm** | Render free sleeps after 15 minutes idle, and a cold start takes about a minute. Vercel waits up to 120 s for an external rewrite, so the first request is slow rather than failing. A free cron-job.org job hitting `https://<app>.vercel.app/api/health` every 10 minutes avoids the wait (deferred from M0). One always-on service uses about 744 of Render's 750 free hours a month. |
 | **Local dev** | No Docker: `backend/.env` points at the Neon `dev` branch and `backend/.env.testing` at `test`. `php artisan serve`, `npm run dev`. The Vite dev server proxies `/api` and `/sanctum` to `localhost:8000`, which mirrors the single origin used in production. |

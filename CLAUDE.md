@@ -31,7 +31,7 @@ npm run build
 Playwright is added in M9.
 
 ### Deploy
-Merging to `main` deploys both apps: Vercel builds `frontend/`, and Render builds `backend/Dockerfile` and runs `migrate --force --seed` and `optimize` on every container start (Render free has no shell). The seeder only fills an empty database: it skips once products exist, so it never overwrites production data. To reseed production, empty the tables in the Neon console and restart the service. Demo login: `demo@example.com` / `password`. The frontend has no env vars. Render's env (names only): `APP_KEY`, `APP_URL`, `DB_URL` (Neon `main`, direct), `SESSION_SECURE_COOKIE`, `PORT=8080`; everything else is baked into the image.
+Merging to `main` deploys both apps: Vercel builds `frontend/`, and Render builds `backend/Dockerfile` and runs `migrate --force --seed` and `optimize` on every container start (Render free has no shell). The seeder only fills an empty database: it skips once products exist, so it never overwrites production data. To reseed production, empty the tables in the Neon console and restart the service. Demo login: `demo@example.com` / `password`. The frontend has no env vars. Render's env (names only): `APP_KEY`, `APP_URL`, `DB_URL` (Neon `main`, direct), `SESSION_SECURE_COOKIE`, `PORT=8080`; everything else is baked into the image, including `SANCTUM_STATEFUL_DOMAINS` (the Vercel host; change it in the `Dockerfile` if the Vercel URL changes).
 ```sh
 curl -i https://eneba-marketplace-rosy.vercel.app/api/health    # production smoke check through Vercel; expect 200 {"status":"ok","db":"ok"}
 ```

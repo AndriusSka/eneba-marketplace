@@ -119,12 +119,42 @@ Deploying in M0 is deliberate: free-tier hosting problems (proxy, cookies, cold 
 
 ## M5 — Authentication
 
-- [ ] Sanctum SPA setup: stateful domains, TrustProxies, database sessions and the CSRF cookie flow in the fetch client.
-- [ ] Close CORS explicitly: publish `config/cors.php` with `allowed_origins => []` and `supports_credentials => false`. The SPA is same-origin through the Vercel rewrite and the Vite proxy, so it never needs CORS. Laravel's unpublished default (`allowed_origins => ['*']` on `api/*`) is live since M0 and was never a decision. Note it in ARCHITECTURE.md › Authentication.
-- [ ] `POST /api/register`, `/api/login` (rate-limited), `/api/logout` and `GET /api/me`.
-- [ ] Login and register pages with server validation errors shown on the fields. `RequireAuth` wrapper with `?next=` redirect back. Header shows the user menu or a sign-in link.
+- [x] Sanctum SPA setup: stateful domains, TrustProxies, database sessions and the CSRF cookie flow in the fetch client.
+- [x] Close CORS explicitly: publish `config/cors.php` with `allowed_origins => []` and `supports_credentials => false`. The SPA is same-origin through the Vercel rewrite and the Vite proxy, so it never needs CORS. Laravel's unpublished default (`allowed_origins => ['*']` on `api/*`) is live since M0 and was never a decision. Note it in ARCHITECTURE.md › Authentication.
+- [x] `POST /api/register`, `/api/login` (rate-limited), `/api/logout` and `GET /api/me`.
+- [x] Login and register pages with server validation errors shown on the fields. `RequireAuth` wrapper with `?next=` redirect back. Header shows the user menu or a sign-in link.
 
 **Verify:** Pest tests: register, login with valid and invalid credentials, logout, the throttle after 5 failures, and a guest getting 401 on `/api/checkout`, `/api/orders` and `/api/me`. A request with a foreign `Origin` (including a preflight `OPTIONS`) gets no `Access-Control-Allow-Origin` header. **Production check:** sign in on the Vercel URL, reload the page and stay signed in. This confirms the cookie survives the proxy.
+
+**Verified 2026-11-15** (except the production check, which waits for the merge):
+- **Automated:**
+  - Pest 149/149 on the `test` branch, and Pint is clean.
+  - `AuthTest` (18 tests):
+    - Register stores only a bcrypt hash and signs the user in. Five invalid-input cases each return 422 on the right field.
+    - Valid login. A wrong password and an unknown email return the same 422.
+    - The 6th try after 5 failures returns 429, even with the right password. A success resets the count.
+    - Sign-in gives a new session id.
+    - Logout invalidates the session: the old cookie then gets 401.
+    - Every `auth:sanctum` route returns 401 JSON to a guest.
+    - `/sanctum/csrf-cookie` sets `XSRF-TOKEN`.
+    - A foreign `Origin` (GET and preflight) gets no `Access-Control-Allow-Origin` header.
+    - The follow-up requests drop the test app's cached guards and carry only the session cookie, like a page reload.
+  - Vitest 101/101:
+    - `client`: `X-XSRF-TOKEN`, fetching the cookie when it's missing, one retry on 419, field errors.
+    - `safeNext`: open-redirect cases.
+    - `RequireAuth`: redirect with `next`, the signed-in page, the API down.
+    - `LoginPage` / `RegisterPage`: errors on the fields with `aria-describedby`; going back to `next`.
+    - `UserMenu`: links with `next`, sign out.
+  - oxlint, `tsc -b` and the build pass.
+- **Manual, through the Vite proxy (curl standing in for the browser):**
+  - A POST without `X-XSRF-TOKEN` gets 419. A wrong password gets 422.
+  - Login gives 200, and the session cookie is `httponly; samesite=lax`. `Secure` comes from `SESSION_SECURE_COOKIE` on Render.
+  - `/api/me` with only the cookie (a reload) gets 200.
+  - Logout gets 204, and `/api/me` then gets 401.
+- **Changes from the plan:**
+  - The guest-401 test walks every route in the `auth:sanctum` group instead of naming `/api/checkout` and `/api/orders`, which don't exist until M6. It covers `/api/me` and `/api/logout` now and picks up the M6 routes automatically.
+  - `SANCTUM_STATEFUL_DOMAINS` is set in the `Dockerfile`, not the Render dashboard.
+  - `RequireAuth` isn't mounted on a page yet: M6 puts it around checkout and orders.
 
 ## M6 — Cart and checkout
 
