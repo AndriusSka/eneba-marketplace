@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\Region;
 use App\Services\ProductSearch;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -32,7 +33,34 @@ final class ProductCatalog
 
     public function __construct(private readonly ProductSearch $search) {}
 
+    public const SUGGEST_LIMIT = 6;
+
     public function list(ProductFilters $filters): ProductListResult
+    {
+        // The results, the count and every facet must see the same search threshold.
+        return $filters->q === ''
+            ? $this->runList($filters)
+            : $this->search->within(fn () => $this->runList($filters));
+    }
+
+    /**
+     * Header autocomplete: the first products of the Store's relevance order for the query.
+     *
+     * @param  string  $q  normalized by ProductSearch::normalize(), not empty
+     * @return Collection<int, Product>
+     */
+    public function suggest(string $q): Collection
+    {
+        return $this->search->within(function () use ($q) {
+            $query = $this->catalog();
+            $this->search->filter($query, $q);
+            $this->applySort($query, new ProductFilters(q: $q, sort: ProductFilters::SORT_RELEVANCE));
+
+            return $query->with(['platform', 'region'])->limit(self::SUGGEST_LIMIT)->get();
+        });
+    }
+
+    private function runList(ProductFilters $filters): ProductListResult
     {
         $query = $this->applyFilters($this->catalog(), $filters);
         $total = (clone $query)->count();

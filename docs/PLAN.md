@@ -76,12 +76,32 @@ Deploying in M0 is deliberate: free-tier hosting problems (proxy, cookies, cold 
 
 ## M3 — Search
 
-- [ ] `ProductSearch` class: input normalization (including LIKE escaping) and the tiered ranking SQL. It is plugged into `/api/products?q=` (relevance sort) and `/api/search/suggest`.
-- [ ] Word-similarity threshold set per transaction and tuned against the test table.
-- [ ] Header search box on every page: debounced (250 ms) autocomplete with the top 6, keyboard navigation (↑ ↓ Enter Esc), and Enter opening `/store?q=…`.
-- [ ] Empty results show a "No results for '…'" message with a clear-filters action.
+- [x] `ProductSearch` class: input normalization (including LIKE escaping) and the tiered ranking SQL. It is plugged into `/api/products?q=` (relevance sort) and `/api/search/suggest`.
+- [x] Word-similarity threshold set per transaction and tuned against the test table.
+- [x] Header search box on every page: debounced (250 ms) autocomplete with the top 6, keyboard navigation (↑ ↓ Enter Esc), and Enter opening `/store?q=…`.
+- [x] Empty results show a "No results for '…'" message with a clear-filters action.
 
 **Verify:** a Pest dataset of about 15 cases passes, for example `eldn ring → elden-ring-…`, `cyberp → cyberpunk-2077-…`, `witcer → the-witcher-3-…`, `ring → elden-ring-…`, `FIFA` (case), and a nonsense query → empty. `EXPLAIN` on a fuzzy query shows a bitmap scan on `products_title_trgm`. Manually: typing in the header shows suggestions on the Store, product and cart pages.
+
+**Verified 2026-11-15:**
+- **Approach:** `word_similarity` over whole-title `similarity`. The threshold is 0.35, inside the measured gap between non-matches (≤ 0.333) and typos (≥ 0.400). The comparison and the measurements are in ARCHITECTURE.md › Search approach.
+- **Automated:**
+  - Pest 100/100 on the `test` branch.
+  - `SearchTest` runs against the real seed titles:
+    - 15 ranking cases, including witcher, wticher, elden and cyberpnk.
+    - 6 no-results cases.
+    - The suggest endpoint.
+    - `EXPLAIN` showing a bitmap index scan on `products_title_trgm`.
+  - A mutation run at thresholds 0.30 and 0.45 makes the boundary cases fail.
+  - Pint is clean.
+  - Vitest 59/59: `SearchBox`, `StorePage` empty state and `useDebouncedValue`.
+  - oxlint, `tsc -b` and the build pass.
+- **Manual, on the `dev` data:**
+  - Through the Vite proxy, all four acceptance queries put the right product first; "qwerty" returns 0.
+  - The header box was checked in the browser.
+- **Changes from the plan:**
+  - The Store's own "Filter by name" box was removed: the header box is the only name input and shows `q` on `/store`.
+  - The cart page doesn't exist until M6.
 
 ## M4 — Product page
 
