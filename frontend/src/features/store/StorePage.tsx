@@ -29,7 +29,7 @@ export function StorePage() {
 
   return (
     <main className={`${CONTAINER} py-6`}>
-      <title>{params.q === '' ? 'Store | KeyMarket' : `${params.q} | KeyMarket`}</title>
+      <title>{params.q === '' ? 'Store | Market' : `${params.q} | Market`}</title>
 
       {/* The name query comes from the header search box, which shows it while on /store. */}
       <h1 className="text-h1 font-bold">{params.q === '' ? 'Store' : `Results for “${params.q}”`}</h1>

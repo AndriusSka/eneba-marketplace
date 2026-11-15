@@ -14,7 +14,7 @@ export function Layout() {
         <div className={`${CONTAINER} flex flex-wrap items-center gap-x-6 gap-y-3 py-4 md:h-20 md:flex-nowrap md:py-0`}>
           {/* Our own wordmark: Eneba's logo is not used (SPEC). */}
           <Link to="/" className="text-lg font-bold tracking-tight text-fg">
-            Key<span className="text-accent">Market</span>
+            <span className="text-accent">Market</span>
           </Link>
           <nav aria-label="Main">
             <NavLink

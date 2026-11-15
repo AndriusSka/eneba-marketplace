@@ -19,8 +19,8 @@ export function HomePage() {
 
   return (
     <main className={`${CONTAINER} py-6`}>
-      <title>KeyMarket</title>
-      <h1 className="sr-only">KeyMarket</h1>
+      <title>Market</title>
+      <h1 className="sr-only">Market</h1>
 
       {isPending ? (
         <HomeSkeleton />

@@ -50,7 +50,7 @@ export function OrderPage() {
 function OrderView({ order, justPaid }: { order: Order; justPaid: boolean }) {
   return (
     <main className={`${CONTAINER} py-6`}>
-      <title>{`Order #${order.id} | KeyMarket`}</title>
+      <title>{`Order #${order.id} | Market`}</title>
       {justPaid && <CheckoutSteps active="key" />}
 
       {justPaid && (

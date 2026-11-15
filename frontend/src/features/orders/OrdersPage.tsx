@@ -13,7 +13,7 @@ export function OrdersPage() {
 
   return (
     <main className={`${CONTAINER} py-6`}>
-      <title>My orders | KeyMarket</title>
+      <title>My orders | Market</title>
       <h1 className="mb-6 text-h1 font-bold">My orders</h1>
 
       {isPending ? (

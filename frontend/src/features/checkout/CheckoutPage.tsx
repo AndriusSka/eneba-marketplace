@@ -44,7 +44,7 @@ export function CheckoutPage() {
 
   return (
     <main className={`${CONTAINER} py-6`}>
-      <title>Checkout | KeyMarket</title>
+      <title>Checkout | Market</title>
       <CheckoutSteps active="payment" />
 
       {quote.isError ? (
