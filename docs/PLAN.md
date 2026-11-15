@@ -149,12 +149,34 @@ Deploying in M0 is deliberate: free-tier hosting problems (proxy, cookies, cold 
 
 ## M7 — Homepage
 
-- [ ] `BlockProvider` interface, provider registry, and `BannerProvider`, `BestSellersProvider` and `DealsProvider`.
-- [ ] `HomepageService` with per-provider try/catch and logging. Unknown or empty blocks are left out.
-- [ ] `GET /api/home`.
-- [ ] Frontend `blockRegistry`, `HeroBanner` and `ProductCarousel` components, and an error boundary per block.
+- [x] `BlockProvider` interface, provider registry, and `BannerProvider`, `BestSellersProvider` and `DealsProvider`.
+- [x] `HomepageService` with per-provider try/catch and logging. Unknown or empty blocks are left out.
+- [x] `GET /api/home`.
+- [x] Frontend `blockRegistry`, `HeroBanner` and `ProductCarousel` components, and an error boundary per block.
 
 **Verify:** Pest tests: blocks come back in `position` order, an inactive block is hidden, an unknown type is skipped, a provider that throws is left out while the other blocks still return, and deals only include offers below MSRP. Vitest: an unknown type renders nothing. **Production check:** in Neon, run `UPDATE homepage_blocks SET is_active=false WHERE type='deals'` and swap two positions. The live homepage changes on reload with no redeploy.
+
+**Verified 2026-11-15** (except the production check, which waits for the merge):
+- **Automated:**
+  - Pest 131/131 on the `test` branch, and Pint is clean.
+  - One test file per provider (`tests/Feature/Homepage/`):
+    - Banners: active only, position order, limit.
+    - Best sellers: the days window, sold-out products left out, ties.
+    - Deals: below MSRP only, the `min_discount` boundary, inactive and sold-out offers ignored.
+  - `HomepageTest`: order, reorder, inactive, unknown type logged, a throwing provider left out while the others return, empty blocks, a non-object config, and `link_url` sanitizing.
+  - Vitest 65/65: `blockRegistry` (unknown type, prototype key, bad data, unsafe banner link) and `HomePage` (API order, "View all" only with a link, a block that throws while rendering doesn't hide the others).
+  - oxlint, `tsc -b` and the build pass.
+- **Manual, on the `dev` data:**
+  - `/api/home` returns the 3 blocks with 3 banners, 12 best sellers and 12 deals.
+  - Through tinker:
+    - Disabling deals, swapping the hero and best sellers, and adding a `countdown` row changed the response with no restart.
+    - The unknown type logged a warning.
+    - Reverted afterwards.
+- **Changes from the plan:**
+  - Best sellers leaves out sold-out products.
+  - Blocks take an optional `config.link_url` for "View all".
+  - The M0 `SkeletonPage` and `HealthStatus` were removed.
+- **After the merge:** production was seeded before `link_url` existed. To add it, run in Neon: `UPDATE homepage_blocks SET config = config || '{"link_url":"/store?sort=bestselling"}' WHERE type='best_sellers'`.
 
 ## M8 — Eneba styling
 

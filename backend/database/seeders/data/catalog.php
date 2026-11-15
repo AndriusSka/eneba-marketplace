@@ -105,7 +105,7 @@ return [
     'homepage_blocks' => [
         ['type' => 'hero_banner', 'title' => 'Featured', 'config' => ['limit' => 5]],
         // 90 days, not 30: production is seeded once, so a 30-day window would empty this block a month after the first deploy.
-        ['type' => 'best_sellers', 'title' => 'Best sellers', 'config' => ['limit' => 12, 'days' => 90]],
+        ['type' => 'best_sellers', 'title' => 'Best sellers', 'config' => ['limit' => 12, 'days' => 90, 'link_url' => '/store?sort=bestselling']],
         ['type' => 'deals', 'title' => 'Deals', 'config' => ['limit' => 12, 'min_discount' => 10]],
     ],
 ];

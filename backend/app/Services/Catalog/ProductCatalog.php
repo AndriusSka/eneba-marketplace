@@ -109,8 +109,13 @@ final class ProductCatalog
         return $product;
     }
 
-    /** @return Builder<Product> products with from_price_cents and sales, aliased as `products` */
-    private function catalog(): Builder
+    /**
+     * Every product with the derived columns from_price_cents and sales, aliased as `products`.
+     * Public so the homepage providers rank and filter on the same from-price as the Store.
+     *
+     * @return Builder<Product>
+     */
+    public function catalog(): Builder
     {
         $fromPrice = Offer::query()
             ->selectRaw('min(offers.price_cents)')

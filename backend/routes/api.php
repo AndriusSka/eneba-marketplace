@@ -1,11 +1,14 @@
 <?php
 
 use App\Http\Controllers\HealthController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SearchController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', HealthController::class);
+
+Route::get('/home', HomeController::class);
 
 Route::get('/search/suggest', [SearchController::class, 'suggest']);
 
