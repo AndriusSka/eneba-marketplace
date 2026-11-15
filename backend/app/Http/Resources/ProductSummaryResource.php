@@ -9,7 +9,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 /**
  * A product as it appears on a Store card. Expects the product to come from ProductCatalog,
- * which adds from_price_cents and loads platform and region.
+ * which adds from_price_cents and from_offer_id and loads platform and region.
  *
  * @mixin Product
  */
@@ -20,6 +20,7 @@ class ProductSummaryResource extends JsonResource
     {
         $raw = $this->resource->getAttribute('from_price_cents');
         $fromPrice = $raw === null ? null : (int) $raw;
+        $rawOffer = $this->resource->getAttribute('from_offer_id');
 
         return [
             'id' => $this->id,
@@ -32,6 +33,7 @@ class ProductSummaryResource extends JsonResource
             'msrp_cents' => $this->msrp_cents,
             'currency' => $this->currency,
             'from_price_cents' => $fromPrice,
+            'from_offer_id' => $rawOffer === null ? null : (int) $rawOffer,
             'discount_percent' => Discount::percent($fromPrice, $this->msrp_cents),
             'in_stock' => $fromPrice !== null,
         ];

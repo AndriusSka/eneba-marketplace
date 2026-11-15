@@ -21,6 +21,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
  * Every read goes through catalog(): products plus two derived columns (ARCHITECTURE.md › Data model):
  * - from_price_cents: the lowest price among active offers with at least one available key, or NULL
  *   when nothing is in stock.
+ * - from_offer_id: the offer with that price (lowest id on a tie), or NULL with it.
  * - sales: all-time SUM(order_items.quantity) over the product's offers.
  */
 final class ProductCatalog
@@ -117,8 +118,8 @@ final class ProductCatalog
      */
     public function catalog(): Builder
     {
-        $fromPrice = Offer::query()
-            ->selectRaw('min(offers.price_cents)')
+        // The product's offers that can be bought now: active, with at least one available key.
+        $buyableOffers = fn () => Offer::query()
             ->whereColumn('offers.product_id', 'products.id')
             ->where('offers.is_active', true)
             ->whereExists(fn (QueryBuilder $keys) => $keys
@@ -127,6 +128,12 @@ final class ProductCatalog
                 ->whereColumn('keys.offer_id', 'offers.id')
                 ->where('keys.status', Key::STATUS_AVAILABLE));
 
+        $fromPrice = $buyableOffers()->selectRaw('min(offers.price_cents)');
+
+        // The offer behind that price, for a card's "Add to cart". Ties go to the lowest id, the same
+        // order as find(), so it is always the product page's first offer.
+        $fromOffer = $buyableOffers()->select('offers.id')->orderBy('offers.price_cents')->orderBy('offers.id')->limit(1);
+
         $sales = OrderItem::query()
             ->selectRaw('coalesce(sum(order_items.quantity), 0)::int')
             ->join('offers', 'offers.id', '=', 'order_items.offer_id')
@@ -134,7 +141,7 @@ final class ProductCatalog
 
         $products = Product::query()
             ->select('products.*')
-            ->addSelect(['from_price_cents' => $fromPrice, 'sales' => $sales]);
+            ->addSelect(['from_price_cents' => $fromPrice, 'from_offer_id' => $fromOffer, 'sales' => $sales]);
 
         // Wrapping lets filters and sorts use the derived columns by name.
         return Product::query()->fromSub($products, 'products');

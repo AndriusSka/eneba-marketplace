@@ -18,6 +18,8 @@ export type ProductSummary = {
   currency: string
   /** Lowest price among active offers with stock; null when out of stock. */
   from_price_cents: number | null
+  /** The offer behind from_price_cents (what a card's "Add to cart" adds); null with it. */
+  from_offer_id: number | null
   discount_percent: number | null
   in_stock: boolean
 }
@@ -74,6 +76,7 @@ export function isProductSummary(value: unknown): value is ProductSummary {
     isNumber(value.msrp_cents) &&
     isString(value.currency) &&
     isNullableNumber(value.from_price_cents) &&
+    isNullableNumber(value.from_offer_id) &&
     isNullableNumber(value.discount_percent) &&
     typeof value.in_stock === 'boolean'
   )

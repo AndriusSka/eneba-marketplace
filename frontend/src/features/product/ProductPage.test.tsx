@@ -31,6 +31,7 @@ const product: ProductDetail = {
   msrp_cents: 5999,
   currency: 'EUR',
   from_price_cents: 3449,
+  from_offer_id: 1,
   discount_percent: 42,
   in_stock: true,
   // API order: in stock first, then by price.
@@ -107,6 +108,7 @@ describe('ProductPage', () => {
       data: {
         ...product,
         from_price_cents: null,
+        from_offer_id: null,
         discount_percent: null,
         in_stock: false,
         offers: [offer({ id: 9, stock: 0, in_stock: false })],

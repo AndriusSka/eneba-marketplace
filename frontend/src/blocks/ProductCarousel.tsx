@@ -39,10 +39,13 @@ export function ProductCarousel({ title, linkUrl, products }: Props) {
         )}
       </div>
 
+      {/* A sideways-scrolling list clips anything below its box, which would cut off a card's hover
+          panel (ProductCard). pb-28 makes room for the panel inside the list, and -mb-28 takes that
+          room back from the layout, so the panel overlaps what follows instead of adding a gap. */}
       <ul
         ref={listRef}
         onScroll={update}
-        className="-mx-2 flex snap-x snap-mandatory overflow-x-auto scrollbar-none"
+        className="-mx-2 -mb-28 flex snap-x snap-mandatory overflow-x-auto overflow-y-hidden pb-28 scrollbar-none"
       >
         {products.map((product) => (
           <li key={product.id} className="flex min-w-0 shrink-0 basis-2/5 snap-start px-2 sm:basis-1/4 lg:basis-1/5">

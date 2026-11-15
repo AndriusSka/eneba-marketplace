@@ -17,6 +17,7 @@ function product(id: number, slug: string, title: string): ProductSummary {
     msrp_cents: 2999,
     currency: 'EUR',
     from_price_cents: 1499,
+    from_offer_id: id * 10,
     discount_percent: 50,
     in_stock: true,
   }
