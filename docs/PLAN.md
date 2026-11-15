@@ -126,7 +126,12 @@ Deploying in M0 is deliberate: free-tier hosting problems (proxy, cookies, cold 
 
 **Verify:** Pest tests: register, login with valid and invalid credentials, logout, the throttle after 5 failures, and a guest getting 401 on `/api/checkout`, `/api/orders` and `/api/me`. A request with a foreign `Origin` (including a preflight `OPTIONS`) gets no `Access-Control-Allow-Origin` header. **Production check:** sign in on the Vercel URL, reload the page and stay signed in. This confirms the cookie survives the proxy.
 
-**Verified 2026-11-15** (except the production check, which waits for the merge):
+**Verified 2026-11-15**, production check included:
+- **Production** (https://eneba-marketplace-rosy.vercel.app, after M6 was merged):
+  - The first deploy returned 500 on every session request: `Unsupported cipher or incorrect key length`. The Render `APP_KEY` was malformed, which nothing before M5 had exercised. Fixed by setting it to the full `php artisan key:generate --show` output.
+  - Afterwards, sign-in returns 200 and the session cookie is `secure; httponly; samesite=lax` through the Vercel rewrite.
+  - A fresh request with only that cookie (a reload) gets 200 on `/api/me`.
+  - Logout returns 204, and the old cookie then gets 401.
 - **Automated:**
   - Pest 149/149 on the `test` branch, and Pint is clean.
   - `AuthTest` (18 tests):
@@ -177,7 +182,17 @@ Deploying in M0 is deliberate: free-tier hosting problems (proxy, cookies, cold 
 
 **Concurrency test:** 20 parallel processes on an offer with 5 keys → exactly 5 orders and 15 out-of-stock results, 5 distinct sold keys and 0 available. Vitest covers the cart store. Manually: a double-click on Pay creates one order.
 
-**Verified 2026-11-15** (except the browser pass and the production check, which wait for the merge):
+**Verified 2026-11-15**, production included (the hands-on browser pass is still open, see below):
+- **Production**, on https://eneba-marketplace-rosy.vercel.app, curl standing in for the browser:
+  - `/`, `/product/…`, `/cart`, `/checkout`, `/orders` and `/orders/:id` serve the SPA.
+  - The first best seller on `/api/home` → its product → the best offer.
+  - A guest gets a quote, and checkout → 401.
+  - Sign in as the demo user.
+  - 4000…0002 → 402, stock unchanged (6).
+  - 4242 with a tampered price → 201 at the DB price (order 22, one key, `no-store`).
+  - The same Idempotency-Key → 200, stock 6 → 5.
+  - The order is in history, and its detail has the key. A missing order → 404.
+  - Asking for more than the stock → 409 "The Witcher 3: Wild Hunt from LootLane has only 5 keys left."
 - **Automated:**
   - Pest 195/195 on the `test` branch, and Pint is clean.
   - `CheckoutTest`:
@@ -225,7 +240,7 @@ Deploying in M0 is deliberate: free-tier hosting problems (proxy, cookies, cold 
   - The quote has a fifth warning, `unavailable`, for offer ids that no longer exist.
   - 409 bodies carry `offer_id`.
   - The optional added-to-cart modal was skipped in favour of an inline "Added · View cart" message.
-- **After the merge:** run the flow homepage → product → cart → sign in → pay → key on the live URL. The M5 production check (stay signed in after a reload) is done on the same pass.
+- **Found on the live check:** a guest request to a protected route *without* `Accept: application/json` got 500 (`Route [login] not defined`) instead of 401. The SPA always sends the header, so users never hit it. It is fixed separately (`fix/api-guest-401`).
 
 ## M7 — Homepage
 
