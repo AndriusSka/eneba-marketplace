@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Route as RouteDefinition;
 use Illuminate\Support\Facades\Hash;
@@ -181,6 +182,68 @@ it('returns 401 JSON to a guest even without an Accept: application/json header'
 
 it('issues the XSRF-TOKEN cookie the SPA sends back as X-XSRF-TOKEN', function () {
     $this->get('/sanctum/csrf-cookie')->assertNoContent()->assertCookie('XSRF-TOKEN');
+});
+
+/** The XSRF-TOKEN cookie exactly as the browser stores it (encrypted), which the SPA sends as X-XSRF-TOKEN. */
+function xsrfHeaderFrom(TestResponse $response): string
+{
+    $cookie = $response->getCookie('XSRF-TOKEN', decrypt: false);
+    expect($cookie)->not->toBeNull();
+
+    return (string) $cookie->getValue();
+}
+
+describe('CSRF', function () {
+    // Laravel skips the CSRF check while tests run (PreventRequestForgery::runningUnitTests()), so the
+    // other tests pass without a token. Here the same middleware runs with that skip turned off.
+    // Sanctum builds it through the container (config/sanctum.php › validate_csrf_token), so the
+    // binding below replaces it for these tests only.
+    beforeEach(function () {
+        $this->app->bind(ValidateCsrfToken::class, fn ($app) => new class($app, $app['encrypter']) extends ValidateCsrfToken
+        {
+            protected function runningUnitTests()
+            {
+                return false;
+            }
+        });
+    });
+
+    it('rejects every state-changing API request from the SPA that has no X-XSRF-TOKEN', function () {
+        $isWrite = fn (string $method) => ! in_array($method, ['GET', 'HEAD', 'OPTIONS'], true);
+        $routes = collect(Route::getRoutes()->getRoutes())->filter(
+            fn (RouteDefinition $route) => str_starts_with($route->uri(), 'api/') && array_filter($route->methods(), $isWrite) !== [],
+        );
+
+        // Guards the walk itself.
+        expect($routes->map->uri()->all())->toContain('api/login', 'api/register', 'api/logout', 'api/checkout', 'api/cart/quote');
+
+        foreach ($routes as $route) {
+            $uri = '/'.preg_replace('/\{[^}]+\}/', '1', $route->uri());
+            foreach (array_filter($route->methods(), $isWrite) as $method) {
+                $this->json($method, $uri)->assertStatus(419);
+            }
+        }
+
+        $this->assertGuest('web');
+    });
+
+    it('accepts the token from the XSRF-TOKEN cookie, and still asks a signed-in user for it', function () {
+        $user = User::factory()->create(['password' => 'password']);
+        $visit = $this->get('/sanctum/csrf-cookie')->assertNoContent();
+
+        asNextRequestWithCookieFrom($visit);
+        $login = $this->withHeader('X-XSRF-TOKEN', xsrfHeaderFrom($visit))
+            ->postJson('/api/login', ['email' => $user->email, 'password' => 'password'])
+            ->assertOk();
+
+        // Signed in, but no token: refused before the controller runs.
+        asNextRequestWithCookieFrom($login);
+        $this->withoutHeader('X-XSRF-TOKEN')->postJson('/api/checkout', [])->assertStatus(419);
+
+        // With the token, the request gets past CSRF and auth: only validation is left to fail.
+        asNextRequestWithCookieFrom($login);
+        $this->withHeader('X-XSRF-TOKEN', xsrfHeaderFrom($login))->postJson('/api/checkout', [])->assertUnprocessable();
+    });
 });
 
 describe('CORS is closed', function () {

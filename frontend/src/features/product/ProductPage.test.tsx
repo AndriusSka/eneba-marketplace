@@ -1,8 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Offer, ProductDetail } from '../../api/products'
+import { cartStore } from '../cart/cartStore'
 import { ProductPage } from './ProductPage'
 
 function offer(overrides: Partial<Offer>): Offer {
@@ -59,6 +60,10 @@ function renderProduct(slug = product.slug) {
   )
 }
 
+beforeEach(() => {
+  localStorage.clear()
+  cartStore.reload()
+})
 afterEach(() => {
   vi.unstubAllGlobals()
 })
@@ -113,5 +118,25 @@ describe('ProductPage', () => {
     expect(await screen.findByRole('heading', { name: 'Offers (1)' })).toBeInTheDocument()
     expect(screen.queryByText('Best price')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Out of stock' })).toBeDisabled()
+
+    const buyBox = screen.getByRole('complementary', { name: 'Best price' })
+    expect(within(buyBox).getByText('Out of stock')).toBeInTheDocument()
+    expect(within(buyBox).queryByRole('button', { name: 'Add to cart' })).not.toBeInTheDocument()
+  })
+
+  it('adds the best offer from the buy box', async () => {
+    stubFetch(200, { data: product })
+
+    renderProduct()
+
+    const buyBox = await screen.findByRole('complementary', { name: 'Best price' })
+    expect(within(buyBox).getByText('€34.49')).toBeInTheDocument()
+    expect(within(buyBox).getByText('Pixel Vault')).toBeInTheDocument()
+    expect(within(buyBox).getByRole('button', { name: 'Compare 3 offers' })).toBeInTheDocument()
+
+    fireEvent.click(within(buyBox).getByRole('button', { name: 'Add to cart' }))
+
+    expect(cartStore.get()).toEqual([{ offerId: 1, quantity: 1 }])
+    expect(within(buyBox).getByText(/Added/)).toBeInTheDocument()
   })
 })

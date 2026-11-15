@@ -1,30 +1,21 @@
+import { sameSitePath } from '../../lib/sameSitePath'
+
 // The `?next=` parameter on /login and /register: where to go after signing in.
 
 const AUTH_PAGES = new Set(['/login', '/register'])
-// A throwaway base: anything that resolves to another origin is not one of our pages.
-const BASE = 'https://app.invalid'
 
 /**
  * Returns `next` only if it is a path on this site, otherwise '/'. This blocks open redirects such as
- * `//evil.com`, `/\evil.com`, `https://evil.com` or `javascript:`, which the URL parser resolves to
- * another origin. The auth pages themselves are not a destination.
+ * `//evil.com`, `/\evil.com`, `https://evil.com` or `javascript:` (see sameSitePath). The auth pages
+ * themselves are not a destination.
  */
 export function safeNext(next: string | null | undefined): string {
-  if (!next || !next.startsWith('/')) {
+  const path = next ? sameSitePath(next) : null
+  // The pathname is the part before any query or hash.
+  if (path === null || AUTH_PAGES.has(path.split(/[?#]/, 1)[0])) {
     return '/'
   }
-
-  let url: URL
-  try {
-    url = new URL(next, BASE)
-  } catch {
-    return '/'
-  }
-
-  if (url.origin !== BASE || AUTH_PAGES.has(url.pathname)) {
-    return '/'
-  }
-  return `${url.pathname}${url.search}${url.hash}`
+  return path
 }
 
 /** Link to /login or /register that comes back to `returnTo` afterwards. */

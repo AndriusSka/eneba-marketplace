@@ -21,6 +21,16 @@ export function ProductCard({ product }: { product: ProductSummary }) {
         <span className="absolute inset-x-0 bottom-0 bg-scrim py-1 text-center text-xs font-semibold text-fg">
           {product.platform.name}
         </span>
+        {/* DESIGN.md › Product card › Hover buttons: "View offers" only, since a card is a product,
+            not an offer. It looks like a secondary button, but the whole card is already the link,
+            so this is decoration (aria-hidden), not a second control. It sits over the cover, above
+            the platform band, so showing it never changes the card's height. */}
+        <span
+          aria-hidden="true"
+          className="absolute inset-x-3 bottom-9 hidden h-8 items-center justify-center rounded-sm border border-line-strong bg-surface-card text-sm font-bold text-fg group-hover:flex group-focus-visible:flex"
+        >
+          View offers
+        </span>
       </div>
 
       <div className="flex flex-1 flex-col gap-1 p-3">

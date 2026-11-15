@@ -2,7 +2,8 @@ import { render, screen } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { describe, expect, it } from 'vitest'
 import type { HomeBlock } from '../api/home'
-import { HomeBlockView } from './blockRegistry'
+import { canRenderBlock } from './blockRegistry'
+import { HomeBlockView } from './HomeBlockView'
 
 function renderBlock(block: HomeBlock) {
   const router = createMemoryRouter([{ path: '/', element: <HomeBlockView block={block} /> }])
@@ -35,6 +36,15 @@ describe('HomeBlockView', () => {
     const { container } = renderBlock({ id: 4, type: 'deals', title: 'Deals', link_url: null, data: [{ id: 'x' }] })
 
     expect(container).toBeEmptyDOMElement()
+  })
+
+  it('reports which blocks will draw something, so the homepage only gives those a band', () => {
+    const base = { id: 1, title: 'T', link_url: null }
+
+    expect(canRenderBlock({ ...base, type: 'hero_banner', data: [banner] })).toBe(true)
+    expect(canRenderBlock({ ...base, type: 'countdown', data: [banner] })).toBe(false)
+    expect(canRenderBlock({ ...base, type: 'toString', data: [] })).toBe(false)
+    expect(canRenderBlock({ ...base, type: 'deals', data: [{ id: 'x' }] })).toBe(false)
   })
 
   it('does not link a banner whose URL has an unsafe scheme', () => {

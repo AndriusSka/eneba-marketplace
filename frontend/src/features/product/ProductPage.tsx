@@ -1,6 +1,7 @@
+import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import { ApiError } from '../../api/client'
-import { useProduct, type ProductDetail } from '../../api/products'
+import { useProduct, type Offer, type ProductDetail } from '../../api/products'
 import { PlatformPill, RegionLabel } from '../../components/Badge'
 import { Button } from '../../components/Button'
 import { CONTAINER } from '../../components/Layout'
@@ -8,7 +9,8 @@ import { MsrpDiscount, Price } from '../../components/Price'
 import { Skeleton } from '../../components/Skeleton'
 import { formatCents } from '../../lib/money'
 import { NotFoundPage } from '../../pages/NotFoundPage'
-import { OfferRow } from './OfferRow'
+import { cartStore, type AddResult } from '../cart/cartStore'
+import { AddedMessage, OfferRow } from './OfferRow'
 
 const releaseFormat = new Intl.DateTimeFormat('en-IE', { dateStyle: 'long', timeZone: 'UTC' })
 
@@ -53,11 +55,13 @@ function ProductView({ product }: { product: ProductDetail }) {
         <span className="text-fg">{product.title}</span>
       </nav>
 
-      <div className="flex flex-col gap-6 md:flex-row">
+      {/* Like Eneba's product page (docs/design/05): cover | details | buy box from lg. At md the buy
+          box wraps onto its own row, and on phones everything stacks. */}
+      <div className="flex flex-col gap-6 md:flex-row md:flex-wrap lg:flex-nowrap">
         <img
           src={product.cover_url}
           alt={`${product.title} cover`}
-          className="aspect-3/4 w-full max-w-60 self-center rounded-sm object-cover md:self-start"
+          className="aspect-3/4 w-full max-w-60 shrink-0 self-center rounded-sm object-cover md:self-start"
         />
 
         <div className="flex min-w-0 flex-1 flex-col gap-4">
@@ -74,27 +78,13 @@ function ProductView({ product }: { product: ProductDetail }) {
             <dd>{formatCents(product.msrp_cents)}</dd>
           </dl>
 
-          <div className="rounded-sm bg-surface-raised p-4 md:max-w-sm">
-            {product.from_price_cents === null ? (
-              <p className="text-lg font-bold">Out of stock</p>
-            ) : (
-              <>
-                <p className="flex items-center gap-2 text-xs">
-                  From <MsrpDiscount msrpCents={product.msrp_cents} discountPercent={product.discount_percent} />
-                </p>
-                <Price cents={product.from_price_cents} size="price-lg" />
-              </>
-            )}
-            <p className="mt-1 text-xs">
-              {product.offers.length} {product.offers.length === 1 ? 'offer' : 'offers'} from sellers
-            </p>
-          </div>
-
           <p className="text-base whitespace-pre-line">{product.description}</p>
         </div>
+
+        <BuyBox product={product} best={best} />
       </div>
 
-      <section aria-labelledby="offers-heading" className="mt-12">
+      <section id="offers" aria-labelledby="offers-heading" className="mt-12 scroll-mt-6">
         <h2 id="offers-heading" className="sr-only">
           Offers
         </h2>
@@ -127,17 +117,65 @@ function ProductView({ product }: { product: ProductDetail }) {
   )
 }
 
+/**
+ * The buy box (DESIGN.md › surface-raised "product buy box"): the best offer's price and a primary
+ * button that adds that offer, the same action as "Add to cart" on the Best offer row below.
+ * With nothing in stock it says so and has no button.
+ */
+function BuyBox({ product, best }: { product: ProductDetail; best: Offer | undefined }) {
+  const [added, setAdded] = useState<AddResult | null>(null)
+  const count = product.offers.length
+
+  return (
+    <aside
+      aria-label="Best price"
+      className="flex flex-col gap-3 rounded-sm bg-surface-raised p-4 md:basis-full lg:w-72 lg:shrink-0 lg:basis-auto lg:self-start"
+    >
+      {best ? (
+        <>
+          <div className="flex flex-col items-start gap-0.5">
+            <MsrpDiscount msrpCents={product.msrp_cents} discountPercent={best.discount_percent} />
+            <Price cents={best.price_cents} size="price-lg" />
+            <p className="text-xs">
+              Sold by <span className="font-semibold">{best.seller.name}</span>
+            </p>
+          </div>
+          <Button className="w-full" onClick={() => setAdded(cartStore.add(best.id, 1, best.stock))}>
+            Add to cart
+          </Button>
+          <p aria-live="polite" className="min-h-4 text-xs">
+            {added && <AddedMessage result={added} />}
+          </p>
+        </>
+      ) : (
+        <p className="text-lg font-bold">Out of stock</p>
+      )}
+
+      {count > 0 && (
+        <button
+          type="button"
+          className="border-t border-line pt-3 text-sm font-semibold text-accent hover:text-accent-hover"
+          onClick={() => document.getElementById('offers')?.scrollIntoView({ behavior: 'smooth' })}
+        >
+          {count === 1 ? 'See the offer' : `Compare ${count} offers`}
+        </button>
+      )}
+    </aside>
+  )
+}
+
 function ProductSkeleton() {
   return (
     <main className={`${CONTAINER} py-6`} aria-busy="true">
       <Skeleton className="mb-4 h-4 w-40" />
-      <div className="flex flex-col gap-6 md:flex-row">
+      <div className="flex flex-col gap-6 md:flex-row md:flex-wrap lg:flex-nowrap">
         <Skeleton className="aspect-3/4 w-full max-w-60 self-center md:self-start" />
         <div className="flex flex-1 flex-col gap-4">
           <Skeleton className="h-9 w-2/3" />
           <Skeleton className="h-6 w-40" />
-          <Skeleton className="h-24 w-full md:max-w-sm" />
+          <Skeleton className="h-24 w-full" />
         </div>
+        <Skeleton className="h-48 w-full lg:w-72 lg:shrink-0" />
       </div>
       <div className="mt-12 flex flex-col gap-3">
         {[0, 1, 2].map((i) => (
