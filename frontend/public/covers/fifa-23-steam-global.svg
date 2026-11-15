@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" role="img" aria-label="FIFA 23 cover art">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2B0E6A"/><stop offset="1" stop-color="#A77EFE"/></linearGradient>
+    <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1"><stop offset="0.5" stop-color="#2F0F74" stop-opacity="0"/><stop offset="1" stop-color="#2F0F74" stop-opacity="0.92"/></linearGradient>
+    <radialGradient id="glow"><stop offset="0" stop-color="#5EEBC4" stop-opacity="0.7"/><stop offset="1" stop-color="#5EEBC4" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="300" height="400" fill="url(#sky)"/>
+  <circle cx="244" cy="107" r="0.8" fill="#FFFFFF" opacity="0.38"/>
+  <circle cx="213" cy="102" r="0.6" fill="#FFFFFF" opacity="0.87"/>
+  <circle cx="241" cy="20" r="0.6" fill="#FFFFFF" opacity="0.39"/>
+  <circle cx="10" cy="58" r="0.6" fill="#FFFFFF" opacity="0.59"/>
+  <circle cx="193" cy="59" r="1.2" fill="#FFFFFF" opacity="0.69"/>
+  <circle cx="17" cy="58" r="1.0" fill="#FFFFFF" opacity="0.75"/>
+  <circle cx="209" cy="85" r="1.1" fill="#FFFFFF" opacity="0.70"/>
+  <circle cx="169" cy="94" r="0.9" fill="#FFFFFF" opacity="0.82"/>
+  <circle cx="112" cy="60" r="1.0" fill="#FFFFFF" opacity="0.60"/>
+  <circle cx="107" cy="58" r="0.8" fill="#FFFFFF" opacity="0.87"/>
+  <circle cx="226" cy="108" r="1.1" fill="#FFFFFF" opacity="0.70"/>
+  <circle cx="50" cy="64" r="1.4" fill="#FFFFFF" opacity="0.39"/>
+  <circle cx="241" cy="91" r="1.6" fill="#FFFFFF" opacity="0.36"/>
+  <circle cx="68" cy="90" r="1.1" fill="#FFFFFF" opacity="0.61"/>
+  <polygon points="30,20 60,230 140,230" fill="#FFFFFF" opacity="0.18"/>
+  <rect x="20" y="15" width="20" height="10" fill="#FFFFFF"/>
+  <polygon points="270,20 160,230 240,230" fill="#FFFFFF" opacity="0.18"/>
+  <rect x="260" y="15" width="20" height="10" fill="#FFFFFF"/>
+  <rect x="0" y="150" width="300" height="70" fill="#2F0F74"/>
+  <polygon points="40,220 260,220 300,400 0,400" fill="#74BD4A" opacity="0.85"/>
+  <polygon points="40,220 260,220 300,400 0,400" fill="none" stroke="#FFFFFF" stroke-width="2"/>
+  <line x1="150" y1="220" x2="150" y2="400" stroke="#FFFFFF" stroke-width="2"/>
+  <ellipse cx="150" cy="290" rx="44" ry="18" fill="none" stroke="#FFFFFF" stroke-width="2"/>
+  <circle cx="190" cy="262" r="9" fill="#FFFFFF"/>
+  <rect width="300" height="400" fill="url(#shade)"/>
+  <text x="22" y="334" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="34" letter-spacing="0.5" fill="#FFFFFF">FIFA 23</text>
+  <rect x="8" y="8" width="284" height="384" rx="2" fill="none" stroke="#A77EFE" stroke-opacity="0.35"/>
+</svg>

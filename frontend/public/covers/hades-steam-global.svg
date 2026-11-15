@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Hades cover art">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#200B4E"/><stop offset="1" stop-color="#4B1DB1"/></linearGradient>
+    <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1"><stop offset="0.5" stop-color="#1F0A4D" stop-opacity="0"/><stop offset="1" stop-color="#1F0A4D" stop-opacity="0.92"/></linearGradient>
+    <radialGradient id="glow"><stop offset="0" stop-color="#CA6493" stop-opacity="0.7"/><stop offset="1" stop-color="#CA6493" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="300" height="400" fill="url(#sky)"/>
+  <rect x="40" y="70" width="24" height="260" fill="#1F0A4D"/><rect x="236" y="70" width="24" height="260" fill="#1F0A4D"/>
+  <path d="M30 80 Q150 10 270 80 v14 Q150 30 30 94 z" fill="#1F0A4D"/>
+  <circle cx="192" cy="32" r="0.8" fill="#CA6493" opacity="0.8"/>
+  <circle cx="123" cy="77" r="1.0" fill="#F9D316" opacity="0.8"/>
+  <circle cx="195" cy="54" r="1.9" fill="#F9D316" opacity="0.8"/>
+  <circle cx="222" cy="196" r="2.2" fill="#CA6493" opacity="0.8"/>
+  <circle cx="182" cy="57" r="1.3" fill="#F9D316" opacity="0.8"/>
+  <circle cx="188" cy="45" r="1.5" fill="#F9D316" opacity="0.8"/>
+  <circle cx="138" cy="187" r="1.3" fill="#CA6493" opacity="0.8"/>
+  <circle cx="90" cy="81" r="1.2" fill="#F9D316" opacity="0.8"/>
+  <circle cx="195" cy="185" r="2.0" fill="#F9D316" opacity="0.8"/>
+  <circle cx="31" cy="42" r="1.7" fill="#CA6493" opacity="0.8"/>
+  <circle cx="65" cy="169" r="1.9" fill="#F9D316" opacity="0.8"/>
+  <circle cx="160" cy="54" r="1.4" fill="#F9D316" opacity="0.8"/>
+  <circle cx="83" cy="182" r="1.2" fill="#CA6493" opacity="0.8"/>
+  <circle cx="142" cy="82" r="2.0" fill="#F9D316" opacity="0.8"/>
+  <circle cx="74" cy="70" r="1.6" fill="#F9D316" opacity="0.8"/>
+  <circle cx="207" cy="120" r="1.7" fill="#CA6493" opacity="0.8"/>
+  <circle cx="112" cy="173" r="2.1" fill="#F9D316" opacity="0.8"/>
+  <circle cx="11" cy="181" r="0.9" fill="#F9D316" opacity="0.8"/>
+  <circle cx="210" cy="152" r="1.8" fill="#CA6493" opacity="0.8"/>
+  <circle cx="253" cy="98" r="0.9" fill="#F9D316" opacity="0.8"/>
+  <circle cx="125" cy="141" r="1.3" fill="#F9D316" opacity="0.8"/>
+  <circle cx="82" cy="73" r="1.7" fill="#CA6493" opacity="0.8"/>
+  <circle cx="86" cy="137" r="1.9" fill="#F9D316" opacity="0.8"/>
+  <circle cx="101" cy="60" r="1.0" fill="#F9D316" opacity="0.8"/>
+  <path d="M-10 330 Q-6 261 8 193 Q24 261 26 330 Z" fill="#E5484D" opacity="0.9"/>
+  <path d="M-2 330 Q0 295 8 261 Q18 295 18 330 Z" fill="#F9D316"/>
+  <path d="M26 330 Q30 263 44 196 Q60 263 62 330 Z" fill="#E5484D" opacity="0.9"/>
+  <path d="M34 330 Q36 296 44 263 Q54 296 54 330 Z" fill="#F9D316"/>
+  <path d="M62 330 Q66 281 80 232 Q96 281 98 330 Z" fill="#E5484D" opacity="0.9"/>
+  <path d="M70 330 Q72 305 80 281 Q90 305 90 330 Z" fill="#F9D316"/>
+  <path d="M98 330 Q102 262 116 195 Q132 262 134 330 Z" fill="#E5484D" opacity="0.9"/>
+  <path d="M106 330 Q108 296 116 262 Q126 296 126 330 Z" fill="#F9D316"/>
+  <path d="M134 330 Q138 274 152 219 Q168 274 170 330 Z" fill="#E5484D" opacity="0.9"/>
+  <path d="M142 330 Q144 302 152 274 Q162 302 162 330 Z" fill="#F9D316"/>
+  <path d="M170 330 Q174 254 188 179 Q204 254 206 330 Z" fill="#E5484D" opacity="0.9"/>
+  <path d="M178 330 Q180 292 188 254 Q198 292 198 330 Z" fill="#F9D316"/>
+  <path d="M206 330 Q210 253 224 176 Q240 253 242 330 Z" fill="#E5484D" opacity="0.9"/>
+  <path d="M214 330 Q216 291 224 253 Q234 291 234 330 Z" fill="#F9D316"/>
+  <path d="M242 330 Q246 284 260 239 Q276 284 278 330 Z" fill="#E5484D" opacity="0.9"/>
+  <path d="M250 330 Q252 307 260 284 Q270 307 270 330 Z" fill="#F9D316"/>
+  <path d="M278 330 Q282 267 296 204 Q312 267 314 330 Z" fill="#E5484D" opacity="0.9"/>
+  <path d="M286 330 Q288 298 296 267 Q306 298 306 330 Z" fill="#F9D316"/>
+  <rect width="300" height="400" fill="url(#shade)"/>
+  <text x="22" y="334" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="34" letter-spacing="0.5" fill="#FFFFFF">HADES</text>
+  <rect x="8" y="8" width="284" height="384" rx="2" fill="none" stroke="#A77EFE" stroke-opacity="0.35"/>
+</svg>

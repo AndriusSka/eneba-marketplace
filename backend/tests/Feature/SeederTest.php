@@ -33,6 +33,20 @@ it('gives every product at least 2 active offers and at most 5 offers', function
     }
 });
 
+it('gives every product its own cover file, and every banner an image that exists', function () {
+    $public = dirname(base_path()).'/frontend/public';
+    $covers = Product::pluck('cover_url', 'slug');
+
+    foreach ($covers as $slug => $url) {
+        // Run `php scripts/generate-covers.php` after adding or renaming a product.
+        expect($url)->toBe("/covers/{$slug}.svg")
+            ->and(is_file($public.$url))->toBeTrue("Missing cover {$url}");
+    }
+    foreach (DB::table('banners')->pluck('image_url') as $url) {
+        expect(is_file($public.$url))->toBeTrue("Missing banner {$url}");
+    }
+});
+
 it('includes the titles the search tests depend on', function () {
     $slugs = [
         'the-witcher-3-wild-hunt-steam-global',

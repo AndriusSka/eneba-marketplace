@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" role="img" aria-label="The Witcher 3: Wild Hunt cover art">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1F0A4D"/><stop offset="1" stop-color="#341282"/></linearGradient>
+    <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1"><stop offset="0.5" stop-color="#200B4E" stop-opacity="0"/><stop offset="1" stop-color="#200B4E" stop-opacity="0.92"/></linearGradient>
+    <radialGradient id="glow"><stop offset="0" stop-color="#FFFFFF" stop-opacity="0.7"/><stop offset="1" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="300" height="400" fill="url(#sky)"/>
+  <circle cx="236" cy="131" r="1.3" fill="#FFFFFF" opacity="0.86"/>
+  <circle cx="270" cy="43" r="0.7" fill="#FFFFFF" opacity="0.76"/>
+  <circle cx="278" cy="48" r="1.5" fill="#FFFFFF" opacity="0.42"/>
+  <circle cx="92" cy="121" r="1.3" fill="#FFFFFF" opacity="0.78"/>
+  <circle cx="223" cy="49" r="1.4" fill="#FFFFFF" opacity="0.80"/>
+  <circle cx="203" cy="110" r="1.4" fill="#FFFFFF" opacity="0.47"/>
+  <circle cx="234" cy="65" r="1.2" fill="#FFFFFF" opacity="0.58"/>
+  <circle cx="223" cy="44" r="1.3" fill="#FFFFFF" opacity="0.69"/>
+  <circle cx="169" cy="115" r="0.9" fill="#FFFFFF" opacity="0.79"/>
+  <circle cx="238" cy="114" r="1.1" fill="#FFFFFF" opacity="0.46"/>
+  <circle cx="221" cy="95" r="1.0" fill="#FFFFFF" opacity="0.86"/>
+  <circle cx="48" cy="20" r="1.6" fill="#FFFFFF" opacity="0.76"/>
+  <circle cx="40" cy="28" r="1.1" fill="#FFFFFF" opacity="0.47"/>
+  <circle cx="120" cy="68" r="0.8" fill="#FFFFFF" opacity="0.49"/>
+  <circle cx="224" cy="100" r="0.8" fill="#FFFFFF" opacity="0.89"/>
+  <circle cx="195" cy="83" r="1.5" fill="#FFFFFF" opacity="0.66"/>
+  <circle cx="178" cy="30" r="1.2" fill="#FFFFFF" opacity="0.65"/>
+  <circle cx="29" cy="100" r="0.5" fill="#FFFFFF" opacity="0.73"/>
+  <circle cx="278" cy="134" r="1.4" fill="#FFFFFF" opacity="0.74"/>
+  <circle cx="186" cy="82" r="1.4" fill="#FFFFFF" opacity="0.68"/>
+  <circle cx="48" cy="93" r="0.7" fill="#FFFFFF" opacity="0.44"/>
+  <circle cx="211" cy="99" r="0.7" fill="#FFFFFF" opacity="0.70"/>
+  <circle cx="198" cy="67" r="0.9" fill="#FFFFFF" opacity="0.82"/>
+  <circle cx="44" cy="73" r="1.4" fill="#FFFFFF" opacity="0.87"/>
+  <circle cx="161" cy="58" r="0.7" fill="#FFFFFF" opacity="0.50"/>
+  <circle cx="225" cy="134" r="1.6" fill="#FFFFFF" opacity="0.55"/>
+  <circle cx="201" cy="78" r="50" fill="url(#glow)"/>
+  <circle cx="201" cy="78" r="25" fill="#FFFFFF"/>
+  <polygon points="0,400 0,199 50,152 100,207 150,148 200,192 250,140 300,207 300,400" fill="#461EA3" opacity="0.85"/>
+  <polygon points="0,400 0,249 33,205 67,245 100,203 133,249 167,176 200,244 233,199 267,242 300,191 300,400" fill="#5825CC" opacity="0.55"/>
+  <polygon points="0,400 0,286 43,250 86,288 129,241 171,287 214,255 257,284 300,236 300,400" fill="#200B4E" opacity="1"/>
+  <path d="M105 230 h14 v-46 l-7 -12 l-7 12 z" fill="#200B4E"/><rect x="110" y="196" width="4" height="6" fill="#A77EFE"/>
+  <rect width="300" height="400" fill="url(#shade)"/>
+  <text x="22" y="260.6" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="34" letter-spacing="0.5" fill="#FFFFFF">THE</text>
+  <text x="22" y="297.3" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="34" letter-spacing="0.5" fill="#FFFFFF">WITCHER 3:</text>
+  <text x="22" y="334" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="34" letter-spacing="0.5" fill="#FFFFFF">WILD HUNT</text>
+  <rect x="8" y="8" width="284" height="384" rx="2" fill="none" stroke="#A77EFE" stroke-opacity="0.35"/>
+</svg>

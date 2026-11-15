@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" role="img" aria-label="Red Dead Redemption 2 cover art">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#341282"/><stop offset="1" stop-color="#CA6493"/></linearGradient>
+    <linearGradient id="shade" x1="0" y1="0" x2="0" y2="1"><stop offset="0.5" stop-color="#1F0A4D" stop-opacity="0"/><stop offset="1" stop-color="#1F0A4D" stop-opacity="0.92"/></linearGradient>
+    <radialGradient id="glow"><stop offset="0" stop-color="#FFE04D" stop-opacity="0.7"/><stop offset="1" stop-color="#FFE04D" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="300" height="400" fill="url(#sky)"/>
+  <circle cx="115" cy="150" r="92" fill="url(#glow)"/>
+  <circle cx="115" cy="150" r="46" fill="#F9D316"/>
+  <polygon points="0,240 30,240 42,200 98,200 110,240 300,240 300,400 0,400" fill="#4618AC" opacity="0.9"/>
+  <polygon points="150,250 170,210 230,210 252,250" fill="#4618AC"/>
+  <polygon points="0,400 0,278 75,264 150,279 225,263 300,276 300,400" fill="#1F0A4D" opacity="1"/>
+  <path d="M38 300 v-56 a6 6 0 0 1 12 0 v56 z M38 272 h-10 v-16 a4 4 0 0 1 8 0 v8 h2 z M50 262 h10 v-14 a4 4 0 0 0 -8 0 v6 h-2 z" fill="#1F0A4D"/>
+  <path d="M213 300 v-56 a6 6 0 0 1 12 0 v56 z M213 272 h-10 v-16 a4 4 0 0 1 8 0 v8 h2 z M225 262 h10 v-14 a4 4 0 0 0 -8 0 v6 h-2 z" fill="#1F0A4D"/>
+  <rect width="300" height="400" fill="url(#shade)"/>
+  <text x="22" y="260.6" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="34" letter-spacing="0.5" fill="#FFFFFF">RED DEAD</text>
+  <text x="22" y="297.3" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="34" letter-spacing="0.5" fill="#FFFFFF">REDEMPTION</text>
+  <text x="22" y="334" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="34" letter-spacing="0.5" fill="#FFFFFF">2</text>
+  <rect x="8" y="8" width="284" height="384" rx="2" fill="none" stroke="#A77EFE" stroke-opacity="0.35"/>
+</svg>
