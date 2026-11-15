@@ -14,7 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Sanctum SPA auth: requests from SANCTUM_STATEFUL_DOMAINS get the session and CSRF check.
+        $middleware->statefulApi();
+
+        // Requests arrive through Vercel's rewrite and Render's load balancer. Trusting the forwarded
+        // headers lets Laravel see https and the public host, so the Secure session cookie is issued.
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

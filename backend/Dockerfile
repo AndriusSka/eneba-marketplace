@@ -1,6 +1,7 @@
 FROM serversideup/php:8.4-fpm-nginx
 
 # Non-secret production defaults. Secrets (APP_KEY, DB_URL) and APP_URL come from the Render dashboard.
+# SANCTUM_STATEFUL_DOMAINS is the public Vercel host the browser sees; requests from it get cookie auth.
 # The image's Laravel automations run on every container start, before nginx starts:
 # storage:link (off: no public disk), migrate --force --seed (waits for the DB), then optimize (caches config with runtime env).
 # The seeder fills an empty database once and is a no-op afterwards (it skips when products exist), so
@@ -10,6 +11,7 @@ ENV APP_ENV=production \
     LOG_CHANNEL=stderr \
     DB_CONNECTION=pgsql \
     SESSION_DRIVER=database \
+    SANCTUM_STATEFUL_DOMAINS=eneba-marketplace-rosy.vercel.app \
     CACHE_STORE=database \
     QUEUE_CONNECTION=sync \
     PHP_OPCACHE_ENABLE=1 \
