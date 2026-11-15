@@ -6,7 +6,7 @@ import { CONTAINER } from '../components/Layout'
 export function NotFoundPage() {
   return (
     <main className={`${CONTAINER} py-16 text-center`}>
-      <title>Not found | KeyMarket</title>
+      <title>Not found | Market</title>
       <p className="text-price-lg font-bold text-accent">404</p>
       <h1 className="mt-2 text-h1 font-bold">Page not found</h1>
       <p className="mt-2 text-base">The page or product you’re looking for doesn’t exist.</p>

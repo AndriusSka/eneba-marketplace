@@ -43,7 +43,7 @@ function ProductView({ product }: { product: ProductDetail }) {
 
   return (
     <main className={`${CONTAINER} py-6`}>
-      <title>{`${product.title} | KeyMarket`}</title>
+      <title>{`${product.title} | Market`}</title>
 
       <nav aria-label="Breadcrumb" className="mb-4 text-sm text-fg-muted">
         <Link to="/store" className="hover:text-fg">

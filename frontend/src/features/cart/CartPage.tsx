@@ -27,7 +27,7 @@ export function CartPage() {
 
   return (
     <main className={`${CONTAINER} py-6`}>
-      <title>Cart | KeyMarket</title>
+      <title>Cart | Market</title>
       <CheckoutSteps active="cart" />
 
       {notice && (
