@@ -1,7 +1,8 @@
 <?php
 
 /*
- * Generates one original SVG cover per catalog product into frontend/public/covers/{slug}.svg.
+ * Generates one original SVG cover per catalog product into frontend/public/covers/{slug}.svg, and the
+ * art for the catalog's hero banners at the image_url each banner already uses.
  *
  *   php scripts/generate-covers.php        (from backend/)
  *
@@ -88,6 +89,137 @@ foreach ($catalog['products'] as $product) {
 }
 
 echo "Wrote {$written} covers to frontend/public/covers/\n";
+
+// Hero banners: written to the image_url each catalog banner already uses, so the database needs no change.
+$bannerScenes = ['bannerPeaks', 'bannerCards', 'bannerDeals'];
+foreach ($catalog['banners'] as $i => $banner) {
+    mt_srand(1000 + $i);
+    $scene = $bannerScenes[$i % count($bannerScenes)];
+    file_put_contents(__DIR__.'/../../frontend/public'.$banner['image_url'], banner($banner['title'], $scene()));
+    echo "Wrote banner {$banner['image_url']}\n";
+}
+
+// ─── Banners ───────────────────────────────────────────────────────────────────
+// 800×400 (the tiles show at 2:1). HeroBanner lays the title on a dark band along the bottom, so the art
+// keeps its focus in the upper right and leaves the lower left calm.
+
+function banner(string $title, string $art): string
+{
+    $label = e($title).' banner art';
+
+    return <<<SVG
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" preserveAspectRatio="xMidYMid slice" role="img" aria-label="{$label}">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#200B4E"/><stop offset="1" stop-color="#5825CC"/></linearGradient>
+    <radialGradient id="glow"><stop offset="0" stop-color="#FFE04D" stop-opacity="0.65"/><stop offset="1" stop-color="#FFE04D" stop-opacity="0"/></radialGradient>
+    <radialGradient id="tealGlow"><stop offset="0" stop-color="#5EEBC4" stop-opacity="0.45"/><stop offset="1" stop-color="#5EEBC4" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="800" height="400" fill="url(#sky)"/>
+{$art}
+</svg>
+
+SVG;
+}
+
+function wideRidge(int $y, int $amp, int $steps, string $fill, float $opacity = 1.0): string
+{
+    $points = ['0,400'];
+    for ($i = 0; $i <= $steps; $i++) {
+        $points[] = round($i * 800 / $steps).','.($y + ($i % 2 === 0 ? r(0, (int) ($amp / 3)) : -r((int) ($amp / 2), $amp)));
+    }
+    $points[] = '800,400';
+
+    return '  <polygon points="'.implode(' ', $points)."\" fill=\"{$fill}\" opacity=\"{$opacity}\"/>";
+}
+
+function wideStars(int $count, int $maxY): string
+{
+    $out = [];
+    for ($i = 0; $i < $count; $i++) {
+        $out[] = sprintf('  <circle cx="%d" cy="%d" r="%.1f" fill="#FFFFFF" opacity="%.2f"/>', r(10, 790), r(10, $maxY), r(6, 18) / 10, r(35, 90) / 100);
+    }
+
+    return implode("\n", $out);
+}
+
+/** Moonlit peaks with a lone tower: the fantasy banner. */
+function bannerPeaks(): string
+{
+    return implode("\n", [
+        wideStars(70, 230),
+        '  <circle cx="610" cy="110" r="120" fill="url(#glow)"/>',
+        '  <circle cx="610" cy="110" r="52" fill="'.C['accent'].'"/>',
+        '  <circle cx="592" cy="96" r="9" fill="'.C['accentHover'].'" opacity="0.7"/><circle cx="628" cy="128" r="6" fill="'.C['accentHover'].'" opacity="0.6"/>',
+        wideRidge(230, 110, 8, C['panel'], 0.9),
+        wideRidge(285, 90, 12, C['raised'], 0.55),
+        // The tower on the near ridge, its window lit.
+        '  <path d="M520 300 h30 v-96 l-15 -26 l-15 26 z" fill="'.C['card'].'"/><rect x="531" y="222" width="8" height="12" fill="'.C['accent'].'"/>',
+        wideRidge(330, 50, 10, C['card']),
+        // A path of light from the tower down the slope.
+        '  <path d="M535 300 C500 330 470 350 420 400 L460 400 C500 360 520 335 545 300 z" fill="'.C['accent'].'" opacity="0.18"/>',
+    ]);
+}
+
+/** A fan of gift cards, one per platform: the gift card banner. */
+function bannerCards(): string
+{
+    $pattern = '';
+    for ($i = -400; $i < 800; $i += 36) {
+        $pattern .= sprintf('  <line x1="%d" y1="0" x2="%d" y2="400" stroke="%s" stroke-opacity="0.08" stroke-width="12"/>', $i, $i + 400, C['lineStrong'])."\n";
+    }
+    // Each card is 180 wide and the next one starts 125 to the right, so the brand and value (on the
+    // left of each card) stay visible under the overlap. All of it sits above the title band.
+    $cards = '';
+    foreach ([['NINTENDO', '25 EUR', C['danger'], -9], ['XBOX', '25 USD', C['discount'], -3], ['PLAYSTATION', '25 EUR', C['teal'], 3], ['STEAM', '50 EUR', C['accent'], 9]] as $i => [$brand, $value, $edge, $angle]) {
+        $x = 215 + $i * 125;
+        $y = 46 + abs($i - 1.5) * 10;
+        $cards .= sprintf(
+            '  <g transform="rotate(%d %d %d)"><rect x="%d" y="%d" width="180" height="120" rx="10" fill="%s"/><rect x="%d" y="%d" width="180" height="120" rx="10" fill="none" stroke="%s" stroke-width="3"/><rect x="%d" y="%d" width="28" height="21" rx="4" fill="%s"/><text x="%d" y="%d" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="12" fill="%s">%s</text><text x="%d" y="%d" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="28" fill="%s">%s</text></g>',
+            $angle, $x + 90, $y + 60,
+            $x, $y, C['panel'],
+            $x, $y, $edge,
+            $x + 14, $y + 14, C['accent'],
+            $x + 14, $y + 58, C['muted'], $brand,
+            $x + 14, $y + 98, C['fg'], $value,
+        )."\n";
+    }
+    $sparkles = '';
+    foreach ([[170, 60, 1.0], [770, 230, 0.8], [700, 330, 0.7], [190, 210, 0.6]] as [$x, $y, $s]) {
+        $sparkles .= sprintf('  <path d="M0 -14 L4 -4 L14 0 L4 4 L0 14 L-4 4 L-14 0 L-4 -4 Z" fill="%s" transform="translate(%d %d) scale(%.1f)"/>', C['accentHover'], $x, $y, $s)."\n";
+    }
+
+    return implode("\n", [
+        rtrim($pattern),
+        '  <circle cx="620" cy="170" r="220" fill="url(#tealGlow)"/>',
+        rtrim($cards),
+        rtrim($sparkles),
+    ]);
+}
+
+/** Price tags with discounts over a falling price line: the low prices banner. */
+function bannerDeals(): string
+{
+    $bars = '';
+    foreach ([300, 250, 215, 170, 140, 105] as $i => $h) {
+        $bars .= sprintf('  <rect x="%d" y="%d" width="38" height="%d" rx="3" fill="%s" opacity="0.35"/>', 380 + $i * 64, 340 - $h, $h + 60, C['lineStrong'])."\n";
+    }
+    $tags = '';
+    foreach ([['-27%', 520, 70, -12], ['-40%', 650, 140, 8], ['-45%', 455, 190, -4]] as [$text, $x, $y, $angle]) {
+        $tags .= sprintf(
+            '  <g transform="rotate(%d %d %d)"><path d="M%d %d h118 a8 8 0 0 1 8 8 v52 a8 8 0 0 1 -8 8 h-118 l-26 -34 z" fill="%s"/><circle cx="%d" cy="%d" r="6" fill="%s"/><text x="%d" y="%d" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="34" fill="%s">%s</text></g>',
+            $angle, $x, $y, $x, $y - 34, C['discount'], $x + 6, $y, C['card'], $x + 22, $y + 12, C['card'], $text,
+        )."\n";
+    }
+
+    return implode("\n", [
+        wideStars(30, 200),
+        rtrim($bars),
+        // The price line, falling left to right, with an arrow head.
+        '  <polyline points="380,90 444,140 508,125 572,190 636,215 700,262 760,300" fill="none" stroke="'.C['accent'].'" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>',
+        '  <polygon points="772,312 744,306 762,286" fill="'.C['accent'].'"/>',
+        rtrim($tags),
+    ]);
+}
 
 // ─── Cover assembly ────────────────────────────────────────────────────────────
 
