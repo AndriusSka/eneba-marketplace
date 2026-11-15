@@ -20,6 +20,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // Requests arrive through Vercel's rewrite and Render's load balancer. Trusting the forwarded
         // headers lets Laravel see https and the public host, so the Secure session cookie is issued.
         $middleware->trustProxies(at: '*');
+
+        // The backend has no login page (the SPA has /login). Laravel's default guest redirect builds
+        // route('login') eagerly, which threw a 500 for a guest request without `Accept: application/json`.
+        // With no redirect, an unauthenticated API request always gets the 401 JSON.
+        $middleware->redirectGuestsTo(fn () => null);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

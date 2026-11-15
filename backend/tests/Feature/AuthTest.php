@@ -173,6 +173,12 @@ it('returns 401 JSON to a guest on every signed-in route', function () {
     }
 });
 
+it('returns 401 JSON to a guest even without an Accept: application/json header', function () {
+    $this->get('/api/me')
+        ->assertUnauthorized()
+        ->assertExactJson(['message' => 'Unauthenticated.']);
+});
+
 it('issues the XSRF-TOKEN cookie the SPA sends back as X-XSRF-TOKEN', function () {
     $this->get('/sanctum/csrf-cookie')->assertNoContent()->assertCookie('XSRF-TOKEN');
 });
