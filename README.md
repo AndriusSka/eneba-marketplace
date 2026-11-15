@@ -2,7 +2,7 @@
 
 **Live: https://eneba-marketplace-rosy.vercel.app**
 
-> The API runs on Render's free tier, which sleeps after 15 minutes without traffic. The first request after that can take about a minute while the server wakes up; after that the site is fast. If the homepage spins, give it a moment.
+> **Be patient on first load!** The API runs on Render's free tier, which sleeps after 15 minutes without traffic. The first request after that can take about a minute while the server wakes up; after that the site is fast. If the homepage spins, give it a moment.
 
 Demo account: `demo@example.com` / `password`. Test cards: `4242 4242 4242 4242` succeeds, `4000 0000 0000 0002` is declined.
 
