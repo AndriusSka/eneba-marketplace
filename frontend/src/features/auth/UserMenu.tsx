@@ -20,9 +20,12 @@ export function UserMenu() {
   if (me.data) {
     return (
       <div className="flex items-center gap-3 text-sm">
-        <span className="max-w-40 truncate font-semibold text-fg" title={me.data.email}>
+        <span className="hidden max-w-40 truncate font-semibold text-fg sm:inline" title={me.data.email}>
           {me.data.name}
         </span>
+        <Link to="/orders" className="font-semibold text-fg hover:text-accent">
+          Orders
+        </Link>
         <Button variant="secondary" size="sm" disabled={logout.isPending} onClick={() => logout.mutate()}>
           Sign out
         </Button>

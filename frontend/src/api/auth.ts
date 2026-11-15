@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ApiError, getJson, sendJson } from './client'
 import { isNumber, isObject, isString } from './guards'
+import { ORDER_KEY, ORDERS_KEY } from './orders'
 
 // POST /api/register, /api/login, /api/logout and GET /api/me (ARCHITECTURE.md › Authentication).
 // The signed-in state is the ['me'] query: a User, or null for a guest. Nothing about the session is
@@ -74,7 +75,12 @@ export function useLogout() {
         }
       }
     },
-    // Order history and other per-user data (M6) must be dropped here too, not just `me`.
-    onSuccess: () => queryClient.setQueryData(ME_QUERY_KEY, null),
+    // Per-user data goes with the session, so the next person on this browser never sees it.
+    // The cart stays: guests have carts too.
+    onSuccess: () => {
+      queryClient.setQueryData(ME_QUERY_KEY, null)
+      queryClient.removeQueries({ queryKey: [ORDERS_KEY] })
+      queryClient.removeQueries({ queryKey: [ORDER_KEY] })
+    },
   })
 }

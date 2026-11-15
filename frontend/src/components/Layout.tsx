@@ -1,5 +1,6 @@
 import { Link, NavLink, Outlet, ScrollRestoration } from 'react-router'
 import { UserMenu } from '../features/auth/UserMenu'
+import { CartLink } from '../features/cart/CartLink'
 import { SearchBox } from '../features/search/SearchBox'
 
 /** Content column: 1072px max (DESIGN.md › Spacing), 16px gutter below 768px, 24px from 768px. */
@@ -26,8 +27,9 @@ export function Layout() {
           <div className="order-last w-full md:order-0 md:max-w-122.5 md:flex-1">
             <SearchBox />
           </div>
-          {/* Below md the search wraps to its own row, so this stays top-right. The cart arrives in M6. */}
-          <div className="ml-auto">
+          {/* Below md the search wraps to its own row, so this stays top-right. */}
+          <div className="ml-auto flex items-center gap-3">
+            <CartLink />
             <UserMenu />
           </div>
         </div>
