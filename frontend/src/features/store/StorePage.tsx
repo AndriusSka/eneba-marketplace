@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router'
 import { useProducts } from '../../api/products'
 import { Button } from '../../components/Button'
@@ -8,7 +8,7 @@ import { ProductCard, ProductCardSkeleton } from '../../components/ProductCard'
 import { FilterSidebar } from './FilterSidebar'
 import { Pagination } from './Pagination'
 import { SortSelect } from './SortSelect'
-import { effectiveSort, hasActiveFilters, MAX_QUERY_LENGTH, toApiQuery, toSearchParams } from './storeParams'
+import { effectiveSort, hasActiveFilters, toApiQuery, toSearchParams } from './storeParams'
 import { useStoreParams } from './useStoreParams'
 
 const SKELETON_CARDS = 12
@@ -27,40 +27,12 @@ export function StorePage() {
     return () => window.removeEventListener('keydown', onKey)
   }, [drawerOpen])
 
-  function submitName(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    const value = new FormData(event.currentTarget).get('q')
-    update({ q: typeof value === 'string' ? value.trim() : '' })
-  }
-
   return (
     <main className={`${CONTAINER} py-6`}>
-      <title>Store | KeyMarket</title>
+      <title>{params.q === '' ? 'Store | KeyMarket' : `${params.q} | KeyMarket`}</title>
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <h1 className="text-h1 font-bold">{params.q === '' ? 'Store' : `Results for “${params.q}”`}</h1>
-
-        {/* Name filter. The header search box (M3) will open /store?q=… too. */}
-        <form role="search" onSubmit={submitName} className="flex w-full gap-2 md:max-w-sm">
-          <label htmlFor="store-q" className="sr-only">
-            Filter by name
-          </label>
-          <input
-            // Remount when the URL changes (Back, Clear filters) so the box shows the restored query.
-            key={params.q}
-            id="store-q"
-            name="q"
-            type="search"
-            defaultValue={params.q}
-            maxLength={MAX_QUERY_LENGTH}
-            placeholder="Filter by name"
-            className="h-10 min-w-0 flex-1 rounded-sm border border-line-strong bg-transparent px-3 text-sm text-fg placeholder:text-fg-muted focus:bg-field-focus"
-          />
-          <Button type="submit" variant="secondary">
-            Search
-          </Button>
-        </form>
-      </div>
+      {/* The name query comes from the header search box, which shows it while on /store. */}
+      <h1 className="text-h1 font-bold">{params.q === '' ? 'Store' : `Results for “${params.q}”`}</h1>
 
       <div className="mt-6 flex gap-6">
         {drawerOpen && (

@@ -1,4 +1,5 @@
 import { Link, NavLink, Outlet, ScrollRestoration } from 'react-router'
+import { SearchBox } from '../features/search/SearchBox'
 
 /** Content column: 1072px max (DESIGN.md › Spacing), 16px gutter below 768px, 24px from 768px. */
 export const CONTAINER = 'mx-auto w-full max-w-268 px-4 md:px-6'
@@ -7,7 +8,8 @@ export function Layout() {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="bg-page">
-        <div className={`${CONTAINER} flex h-20 items-center gap-6`}>
+        {/* One 80px row from md; below md the search wraps onto its own full-width row (DESIGN.md › Header). */}
+        <div className={`${CONTAINER} flex flex-wrap items-center gap-x-6 gap-y-3 py-4 md:h-20 md:flex-nowrap md:py-0`}>
           {/* Our own wordmark: Eneba's logo is not used (SPEC). */}
           <Link to="/" className="text-lg font-bold tracking-tight text-fg">
             Key<span className="text-accent">Market</span>
@@ -20,7 +22,10 @@ export function Layout() {
               Store
             </NavLink>
           </nav>
-          {/* The header search box arrives in M3, the cart and user menu in M5/M6. */}
+          <div className="order-last w-full md:order-0 md:max-w-122.5 md:flex-1">
+            <SearchBox />
+          </div>
+          {/* The cart and user menu arrive in M5/M6. */}
         </div>
       </header>
 

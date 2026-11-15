@@ -96,7 +96,7 @@ REST/JSON under `/api`. Errors use one shape: `{ "message": string, "errors"?: {
 | GET | `/api/health` | – | Liveness plus a DB ping. Used by the uptime pinger |
 | GET | `/api/home` | – | Ordered homepage blocks with their data |
 | GET | `/api/products` | – | Store listing: `q`, `platform[]`, `region[]`, `min_price`, `max_price` (cents), `sort` (`relevance`, `price_asc`, `price_desc`, `newest`, `bestselling`), `page`. Returns `{data, meta:{page, per_page, total, last_page}, facets:{platforms:[{slug,name,count}], regions:[…], price:{min_cents,max_cents}}}`. See [Store API](#store-api) |
-| GET | `/api/search/suggest?q=` | – | Top 6 matches for autocomplete (same engine as the listing) |
+| GET | `/api/search/suggest?q=` | – | Top 6 matches for autocomplete (same engine and order as the listing). `{data: [product]}` with the Store's product fields. Empty `q` → `{data: []}`; `q` over 100 chars → 422 |
 | GET | `/api/products/{slug}` | – | Product details plus active offers (seller, price, stock, discount), in stock first, then by price. 404 `{"message":"Not found."}` for an unknown slug |
 | POST | `/api/cart/quote` | – | `{items:[{offer_id, quantity}]}` → current price, stock and line totals per item, plus warnings (`out_of_stock`, `quantity_reduced`, `inactive`) |
 | GET | `/sanctum/csrf-cookie` | – | Sets the `XSRF-TOKEN` cookie before login/register |
@@ -116,7 +116,7 @@ Implemented by `ProductController` → `ProductCatalog` (`app/Services/Catalog/`
 
 | Param | Rules | Default |
 |---|---|---|
-| `q` | ≤ 100 chars. Trimmed, lower-cased and whitespace collapsed. Matches a substring of `lower(title)`, with LIKE wildcards escaped. M3 adds fuzzy matching | – |
+| `q` | ≤ 100 chars. Trimmed, lower-cased and whitespace collapsed. Matches a substring of `lower(title)` (LIKE wildcards escaped) or a title whose word similarity is ≥ 0.35 (typos). See [Search approach](#search-approach) | – |
 | `platform[]`, `region[]` | Slugs, ≤ 10 each. OR within a dimension, AND across dimensions. An unknown slug matches nothing | all |
 | `min_price`, `max_price` | Integer cents, inclusive, 0–1 000 000, `max ≥ min`. They apply to the from-price, so setting either one drops out-of-stock products | – |
 | `sort` | `relevance` (tier, then sales), `price_asc` / `price_desc` (out of stock last), `newest` (no release date last), `bestselling` (all-time units sold). Every sort ends on `id`, so pages are stable. `relevance` without `q` becomes `bestselling` | `relevance` if `q` is set, otherwise `bestselling` |
@@ -194,10 +194,47 @@ WHERE (lower(p.title) LIKE :q || '%'
 ORDER BY tier, sim DESC, sales DESC, p.id
 ```
 
-3. **Index.** `CREATE INDEX products_title_trgm ON products USING gin (lower(title) gin_trgm_ops)`. This one GIN index serves both the `LIKE '%…'` patterns and the `<%` operator. Queries must use `lower(title)` exactly so the expression index is used. Verified with `EXPLAIN`.
-4. **Threshold.** Set per transaction with `SET LOCAL pg_trgm.word_similarity_threshold`. The starting value of 0.3 is tuned against the ranking test table, which lists about 15 typo and partial-name cases with their expected first result.
+   In the code the WHERE is `lower(title) LIKE '%' || :q || '%' OR :q <% lower(title)`: any substring still matches, as in M2, and tier 3 holds both substring and fuzzy matches, ordered by `sim`.
+
+3. **Index.** `CREATE INDEX products_title_trgm ON products USING gin (lower(title) gin_trgm_ops)`. This one GIN index serves both the `LIKE '%…'` patterns and the `<%` operator. Queries must use `lower(title)` exactly so the expression index is used. `SearchTest` runs `EXPLAIN` on the real Store query (with seq scans off, since 30 rows always seq-scan) and expects a `Bitmap Index Scan on products_title_trgm` with the `%>` condition, pushed down into the catalog subquery.
+4. **Threshold: 0.35.** `<%` reads `pg_trgm.word_similarity_threshold` (default 0.6, far too strict). `ProductSearch::within()` sets it with `set_config(…, true)` inside a transaction around every search query (results, count, facets, suggestions), so it never leaks to another request on a pooled connection. How the value was chosen is covered below.
 5. **Facets.** Platform counts apply every filter except the platform filter, and region counts apply every filter except the region filter. This is standard disjunctive faceting: you can see how many results picking another platform would give.
 6. **Price filter and sort** use the product's from-price. Products with no stock have a NULL from-price, sort last, and are excluded when a price filter is set.
+7. **Header search box** (`frontend/src/features/search/SearchBox.tsx`). It waits 250 ms after typing stops, needs at least 2 characters, and shows up to 6 suggestions. ↑/↓ pick a row and Enter opens it. Enter with no row picked opens `/store?q=…` with no other filters, Esc closes the list. On `/store` the box shows the current `q`; it is the Store's only name input.
+
+### Why `word_similarity`, not whole-title `similarity`
+
+Two pg_trgm designs were compared on the 30 seeded titles before building:
+
+| Query → expected | `word_similarity` (best extent of the title) | `similarity` (whole title) |
+|---|---|---|
+| witcher → The Witcher 3: Wild Hunt | 1.000 | 0.364 |
+| wticher → The Witcher 3: Wild Hunt | 0.400 | 0.154 |
+| witcer → The Witcher 3: Wild Hunt | 0.571 | 0.208 |
+| cyberpnk → Cyberpunk 2077 | 0.667 | 0.412 |
+| cyberp (typing) → Cyberpunk 2077 | 0.857 | 0.375 |
+| zelda → The Legend of Zelda: … | 1.000 | 0.182 |
+| best wrong title for a real query (hogwarts → Hollow Knight) | 0.222 | 0.095 |
+
+Whole-title `similarity` is diluted by title length. "wticher" (0.154) and "zelda" (0.182) score inside the noise band (about 0.10–0.19), so no threshold finds them without letting junk through, and short titles outrank better matches. `word_similarity` scores the query against the best-matching part of the title, so short queries against long titles and half-typed prefixes both score high. `strict_word_similarity` was also measured; it scores prefixes lower (cyberp 0.545), which is worse for autocomplete.
+
+### How the threshold was chosen
+
+`word_similarity` was measured for 20 realistic typos (which should match) and 15 real games we don't sell (which should match nothing):
+
+| Group | Scores |
+|---|---|
+| Typos, lowest | wticher 0.400, fiaf 0.400, sekrio 0.429, eldne / hadse / minecarft / starfeild 0.500. All the others are ≥ 0.57 |
+| Not sold, highest | banana → Baldur's Gate 3, fortnite → Forza Horizon 5 and valorant → Stardew Valley 0.333; tetris, diablo 0.286; gta, zzz 0.250; nonsense ≤ 0.167 |
+
+The groups are separated by a gap from **0.333 to 0.400**, and 0.35 sits inside it. Trigram scores are ratios of small counts (2/6 = 0.333, 2/5 = 0.4), so a threshold placed exactly on 0.333 or 0.4 would depend on whether the comparison is `>` or `>=`. The starting value of 0.3 would let banana, fortnite and valorant through.
+
+`SearchTest` pins both sides: the typo dataset includes the two 0.400 cases, and the no-results dataset includes the three 0.333 cases. A mutation run confirmed it: at 0.30 the three 0.333 queries return results, and at 0.45 "wticher" and "fiaf" find nothing.
+
+**Known limits**, accepted and not tested as passing:
+- "halo" finds Hades (0.400). It is the same trigram arithmetic as "fiaf" → FIFA 23, so no threshold separates them. The result ranks as a fuzzy match.
+- A transposition inside a short word, such as "zleda" (0.200), breaks most of its trigrams and is not found.
+- Abbreviations ("gta" for Grand Theft Auto) are out of scope.
 
 ## Checkout transaction
 
