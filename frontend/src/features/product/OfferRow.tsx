@@ -1,7 +1,10 @@
+import { useState } from 'react'
+import { Link } from 'react-router'
 import type { Offer } from '../../api/products'
 import { BestPricePill } from '../../components/Badge'
 import { Button } from '../../components/Button'
 import { MsrpDiscount, Price } from '../../components/Price'
+import { cartStore, MAX_LINES, type AddResult } from '../cart/cartStore'
 
 type Props = {
   offer: Offer
@@ -12,6 +15,7 @@ type Props = {
 /** DESIGN.md › Offer row. Out-of-stock offers stay visible but can't be added. */
 export function OfferRow({ offer, msrpCents, best = false }: Props) {
   const soldOut = !offer.in_stock
+  const [added, setAdded] = useState<AddResult | null>(null)
 
   return (
     <li
@@ -44,12 +48,39 @@ export function OfferRow({ offer, msrpCents, best = false }: Props) {
           <Price cents={offer.price_cents} />
           <span className="text-xs text-fg-muted">{soldOut ? 'No keys left' : `${offer.stock} in stock`}</span>
         </div>
-        {/* Wired to the cart in M6. */}
-        <Button variant="secondary" disabled={soldOut}>
-          {soldOut ? 'Out of stock' : 'Add to cart'}
-        </Button>
+        <div className="flex flex-col items-end gap-1">
+          <Button
+            variant="secondary"
+            disabled={soldOut}
+            onClick={() => setAdded(cartStore.add(offer.id, 1, offer.stock))}
+          >
+            {soldOut ? 'Out of stock' : 'Add to cart'}
+          </Button>
+          <p aria-live="polite" className="min-h-4 text-xs">
+            {added && <AddedMessage result={added} />}
+          </p>
+        </div>
       </div>
     </li>
+  )
+}
+
+function AddedMessage({ result }: { result: AddResult }) {
+  if (!result.ok) {
+    const message = {
+      cart_full: `Your cart is full (${MAX_LINES} items).`,
+      max_reached: 'You already have the most you can buy in your cart.',
+      out_of_stock: 'Out of stock.',
+    }[result.reason]
+    return <span className="text-danger">{message}</span>
+  }
+  return (
+    <span className="text-teal">
+      {result.quantity === 1 ? 'Added' : `${result.quantity} in cart`} ·{' '}
+      <Link to="/cart" className="font-semibold text-fg underline hover:text-accent">
+        View cart
+      </Link>
+    </span>
   )
 }
 

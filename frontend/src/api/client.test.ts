@@ -89,6 +89,36 @@ describe('sendJson', () => {
   })
 })
 
+describe('error details', () => {
+  it('carries the error code and the offer of a checkout 409', async () => {
+    document.cookie = 'XSRF-TOKEN=t; path=/'
+    stubRoutes({
+      'POST /api/checkout': () =>
+        json(409, { message: 'Elden Ring from PixelVault is out of stock.', code: 'out_of_stock', offer_id: 12 }),
+    })
+
+    const error = await sendJson('POST', '/api/checkout', {}).catch((e: unknown) => e)
+
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error).toMatchObject({
+      status: 409,
+      message: 'Elden Ring from PixelVault is out of stock.',
+      code: 'out_of_stock',
+      offerId: 12,
+      errors: {},
+    })
+  })
+
+  it('leaves code and offer undefined when the body has none or the wrong types', async () => {
+    document.cookie = 'XSRF-TOKEN=t; path=/'
+    stubRoutes({ 'POST /api/checkout': () => json(409, { message: 'Conflict', code: 7, offer_id: '12' }) })
+
+    const error = await sendJson('POST', '/api/checkout', {}).catch((e: unknown) => e)
+
+    expect(error).toMatchObject({ status: 409, code: undefined, offerId: undefined })
+  })
+})
+
 describe('readCookie', () => {
   it('finds one cookie among several', () => {
     document.cookie = 'other=1; path=/'

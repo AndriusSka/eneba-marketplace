@@ -89,7 +89,7 @@ There is no cart table: the cart is client state (see Checkout).
 
 ## API
 
-REST/JSON under `/api`. Errors use one shape: `{ "message": string, "errors"?: {field: [msg]}, "code"?: string }`.
+REST/JSON under `/api`. Errors use one shape: `{ "message": string, "errors"?: {field: [msg]}, "code"?: string, "offer_id"?: int }`. `offer_id` appears on checkout 409s.
 
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
@@ -98,15 +98,33 @@ REST/JSON under `/api`. Errors use one shape: `{ "message": string, "errors"?: {
 | GET | `/api/products` | – | Store listing: `q`, `platform[]`, `region[]`, `min_price`, `max_price` (cents), `sort` (`relevance`, `price_asc`, `price_desc`, `newest`, `bestselling`), `page`. Returns `{data, meta:{page, per_page, total, last_page}, facets:{platforms:[{slug,name,count}], regions:[…], price:{min_cents,max_cents}}}`. See [Store API](#store-api) |
 | GET | `/api/search/suggest?q=` | – | Top 6 matches for autocomplete (same engine and order as the listing). `{data: [product]}` with the Store's product fields. Empty `q` → `{data: []}`; `q` over 100 chars → 422 |
 | GET | `/api/products/{slug}` | – | Product details plus active offers (seller, price, stock, discount), in stock first, then by price. 404 `{"message":"Not found."}` for an unknown slug |
-| POST | `/api/cart/quote` | – | `{items:[{offer_id, quantity}]}` → current price, stock and line totals per item, plus warnings (`out_of_stock`, `quantity_reduced`, `inactive`) |
+| POST | `/api/cart/quote` | – | `{items:[{offer_id, quantity}]}` (same rules as checkout) → current price, stock and line totals per item, plus warnings. See [Cart quote](#cart-quote) |
 | GET | `/sanctum/csrf-cookie` | – | Sets the `XSRF-TOKEN` cookie before login/register |
 | POST | `/api/register` | – | Create an account and sign in |
 | POST | `/api/login` | – | Sign in (rate-limited) |
 | POST | `/api/logout` | user | Sign out |
 | GET | `/api/me` | user | Current user, or 401 |
-| POST | `/api/checkout` | user | Header `Idempotency-Key`. Body `{items:[{offer_id, quantity}], card_number}`. Returns 201 for a new order, 200 for a replay of an existing order, 402 declined, 409 out of stock or inactive (names the offer), 422 invalid |
-| GET | `/api/orders` | user | The current user's orders, newest first |
-| GET | `/api/orders/{id}` | user | Order with items and key codes. 404 if it belongs to someone else |
+| POST | `/api/checkout` | user | Header `Idempotency-Key`. Body `{items:[{offer_id, quantity}], card_number}`. Returns 201 for a new order, 200 for a replay of an existing order, 402 `card_declined`, 409 `out_of_stock` or `offer_unavailable` (the message names product and seller, `offer_id` says which line), 422 invalid. Fields other than ids, quantities and the card are ignored |
+| GET | `/api/orders` | user | The current user's orders, newest first (`created_at`, then `id`), with items but no key codes |
+| GET | `/api/orders/{id}` | user | Order with items and key codes. Someone else's order, a missing id and a non-numeric id all give the same 404 |
+
+Order bodies are `{id, status, total_cents, currency, paid_at, item_count, items:[{id, offer_id, product{id,slug,title,cover_url,platform,region}, seller{id,name}, unit_price_cents, quantity, line_total_cents, keys?:[{id, code}]}]}`. Every response that can carry key codes (checkout and orders) sends `Cache-Control: no-store, private`.
+
+### Cart quote
+
+`POST /api/cart/quote` → `CartQuoteService`. It reads, it reserves nothing. Response: `{data: {lines, total_cents, currency, checkout_ready}}`, one line per requested item in request order:
+
+`{offer_id, requested_quantity, quantity, stock, unit_price_cents|null, line_total_cents, warning|null, product|null, seller|null}`
+
+| `warning` | When | `quantity` |
+|---|---|---|
+| `null` | Active, enough stock | as requested |
+| `quantity_reduced` | requested > stock > 0 | the stock |
+| `out_of_stock` | stock = 0 | 0 |
+| `inactive` | The offer is switched off | 0 |
+| `unavailable` | No offer has this id (a stale browser cart). `product`, `seller` and the price are `null` | 0 |
+
+`total_cents` sums what can be bought now. `checkout_ready` is true when there is at least one line and no line has a warning other than `quantity_reduced`. The cart page lowers the stored quantity to match a `quantity_reduced` line and says so, and blocks checkout until unbuyable lines are removed.
 
 ### Store API
 
@@ -254,16 +272,19 @@ The groups are separated by a gap from **0.333 to 0.400**, and 0.35 sits inside 
 
 ## Checkout transaction
 
-The cart lives in localStorage as `[{offerId, quantity}]`. The client never sends or trusts prices.
+The cart lives in localStorage (`cart:v1`) as `[{offerId, quantity}]`, read through `useSyncExternalStore` (`features/cart/cartStore.ts`). It is parsed leniently (bad entries dropped, duplicates merged), capped at 10 per line and 20 lines, falls back to memory when storage is blocked, and syncs across tabs through the `storage` event. The client never sends or trusts prices.
+
+The checkout page creates one `Idempotency-Key` per attempt (`useIdempotencyKey`). It keeps the key after a network error or a 5xx, so pressing Pay again replays rather than charges twice, and makes a new one after any 4xx answer. A ref guards Pay against a double click within one render.
 
 `POST /api/checkout` → `CheckoutService::checkout(user, items, card, idempotencyKey)`:
 
-1. **Validate.** 1–20 lines, quantity 1–10, distinct offer IDs, a card number present, and an `Idempotency-Key` header (UUID).
-2. **Idempotency lookup.** If `(user_id, idempotency_key)` already has an order, return it with 200 and do nothing else.
-3. **Check the card.** `4000 0000 0000 0002` → 402 `card_declined`. `4242 4242 4242 4242` → approved. Any other number → 422 "use a test card". This step is pure, so it runs before any locks are taken.
+1. **Validate** (`CheckoutRequest`). 1–20 lines, quantity 1–10, distinct offer IDs, a card number present, and an `Idempotency-Key` header (UUID, compared lower-cased). A bad header is a 422 on `idempotency_key`.
+2. **Idempotency lookup.** If `(user_id, idempotency_key)` already has an order, return it with 200 and do nothing else, even if the retry carries a different cart.
+3. **Check the card** (`TestCards`, spaces and dashes ignored). `4000 0000 0000 0002` → 402 `card_declined`. `4242 4242 4242 4242` → approved. Any other number → 422 on `card_number`. This step is pure, so it runs before any locks are taken.
 4. `BEGIN`
-5. **Load and re-price.** Load the offers (`WHERE id IN … AND is_active`) and take prices from the database. A missing or inactive offer → 409 `offer_unavailable`.
-6. **Claim keys.** For each line, in ascending `offer_id` order:
+5. **Load and re-price.** Load the offers by id and take prices from the database. A missing or inactive offer → 409 `offer_unavailable`.
+6. **Create the order** (the idempotency claim). `INSERT orders` (status `paid`, total from the DB prices, idempotency_key, paid_at). It goes in before any key is claimed, so a concurrent duplicate waits here on the UNIQUE index without holding a key lock (see below).
+7. **Claim keys.** For each line, in ascending `offer_id` order:
    ```sql
    SELECT id FROM keys
    WHERE offer_id = :offer AND status = 'available'
@@ -271,19 +292,20 @@ The cart lives in localStorage as `[{offerId, quantity}]`. The client never send
    LIMIT :qty
    FOR UPDATE SKIP LOCKED;
    ```
-   Fewer rows than `:qty` → `ROLLBACK`, 409 `out_of_stock` with the offer ID. The locks are released by the rollback.
-7. **Create the order.** `INSERT orders` (status `paid`, total, idempotency_key, paid_at) and `INSERT order_items` with the price copied at purchase time.
-8. **Mark keys sold.** `UPDATE keys SET status='sold', order_item_id=:item, sold_at=now() WHERE id = ANY(:ids)`.
+   Fewer rows than `:qty` → `ROLLBACK`, 409 `out_of_stock` with the offer ID. The rollback releases every lock, including those on earlier lines, and removes the order row.
+8. **Order line and keys.** `INSERT order_items` with the price copied at purchase time, then `UPDATE keys SET status='sold', order_item_id=:item, sold_at=now() WHERE id = ANY(:ids) AND status='available'`. If the updated count isn't the claimed count, the service throws and everything rolls back (defence in depth; it can't happen under the locks).
 9. `COMMIT` → 201 with the order and its key codes.
 
+`CheckoutException` (402/409) renders the error body itself and is never logged: it is an expected outcome, not a fault.
+
 **Why a key can't be sold twice**
-- A row lock taken in step 6 is held until commit. No other transaction can lock or update that key in the meantime.
+- A row lock taken in step 7 is held until commit. No other transaction can lock or update that key in the meantime.
 - After commit the key's status is `sold`, so later queries never select it.
 - The CHECK constraint (`sold` ⇔ `order_item_id` set) blocks any half-updated state.
 
-**Why `SKIP LOCKED` and not plain `FOR UPDATE`.** With plain `FOR UPDATE … LIMIT n`, a second buyer blocks on rows the first buyer has locked. After the first buyer commits, Postgres re-checks those rows, sees `status='sold'` and drops them. It does **not** go and find replacement rows, so the second buyer gets fewer than `n` keys and a false "out of stock" while other keys are free. `SKIP LOCKED` moves straight to unlocked keys, so buyers neither wait on each other nor see phantom shortages.
+**Why `SKIP LOCKED` and not plain `FOR UPDATE`.** Both are correct; they differ in waiting. With plain `FOR UPDATE`, the second buyer blocks on the first buyer's locked rows until that transaction ends, and with 20 buyers on one offer every buyer waits in line behind the ones before it. (Postgres applies the row lock below the `LIMIT`, so a waiter whose row turned out sold moves on to the next row; it does not come back short. The first draft of this document said otherwise. A mutation run with plain `FOR UPDATE` showed the race test still passing, only slower.) `SKIP LOCKED` lets each buyer take the next unlocked key at once, so buyers don't wait on each other at all. The trade-off: if the only free keys are locked by a checkout that later rolls back, this buyer gets a 409 that a retry would not get. `CheckoutLockingTest` pins the no-wait behaviour.
 
-**Concurrent duplicate requests.** Two requests with the same Idempotency-Key can both pass step 2. The UNIQUE index on `(user_id, idempotency_key)` makes the second `INSERT orders` wait for the first transaction. When that one commits, the second insert fails with a unique violation. The service catches it, rolls back (freeing its key locks) and returns the existing order with 200.
+**Concurrent duplicate requests.** Two requests with the same Idempotency-Key can both pass step 2. Because the order row is inserted before any key is claimed (step 6), the second `INSERT orders` waits on the UNIQUE index for the first transaction while holding no key lock. When the first commits, the second insert fails with a unique violation; the service catches it after the rollback and returns the existing order with 200. If the first rolls back instead (for example out of stock), the second carries on as a normal checkout. So a retry never competes with its own original for keys, and never sees a false "out of stock" from it.
 
 ## Authentication
 
@@ -350,7 +372,8 @@ What it costs:
 |---|---|---|
 | Backend feature tests | Pest + Postgres (Neon `test` branch locally, `postgres:16` service in CI) | Every endpoint. Store filters, sorts, pagination and facets. Auth guards. Checkout: happy path, declined card, out of stock, inactive offer, idempotent replay, ignored price tampering, another user's order → 404. Homepage: ordering, inactive blocks hidden, a failing provider skipped |
 | Search ranking | Pest dataset | About 15 `(query → expected first slug)` cases covering typos, partial names, word prefixes and case. An `EXPLAIN` check confirms the GIN index is used |
-| Concurrency | Pest + `Process::pool` | 20 OS processes each run `CheckoutService` (through a small artisan command) against one offer with 5 keys. The test asserts 5 orders, 15 `out_of_stock` results, 5 distinct sold keys and 0 available keys. It uses `DatabaseMigrations`/truncation instead of transaction rollback, so the worker processes can see the seeded rows |
+| Concurrency | Pest + `Process::pool` | `CheckoutConcurrencyTest`: OS processes each run `CheckoutService` through `php artisan checkout:simulate` (a closure command in `routes/console.php`, not registered in production). Each worker connects first, then sleeps until a shared `--start-at` time so they all fire together. Cases: 20 buyers / 5 keys → 5 created, 15 `out_of_stock`, 5 distinct sold keys, 0 available; 2 buyers / 1 key → 1 and 1; 10 copies of one request with one Idempotency-Key → 1 order, 9 replays. It uses `DatabaseTruncation` (and truncates again afterwards) instead of transaction rollback, so the workers see committed rows. Removing the lock entirely makes it fail |
+| Key locking | Pest + a second DB connection | `CheckoutLockingTest`: another connection holds `FOR UPDATE` on a key mid-transaction. Checkout then takes the *next* key without waiting, or answers 409 at once when every free key is locked. `lock_timeout` is 3 s, so a missing `SKIP LOCKED` fails fast instead of hanging (mutation-checked) |
 | Frontend unit | Vitest + Testing Library | Cart store (add, merge, clamp, persist), `blockRegistry` (unknown type → nothing), Store URL ↔ filter state mapping |
 | End to end | Playwright | One happy path: typo search → product → add offer → cart → login → pay with 4242 → key shown → visible in order history |
 | CI | GitHub Actions | Backend: `pint --test`, `pest`. Frontend: `oxlint`, `tsc -b`, `vitest`, `vite build`. Runs on every push and PR |

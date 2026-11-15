@@ -158,14 +158,14 @@ Deploying in M0 is deliberate: free-tier hosting problems (proxy, cookies, cold 
 
 ## M6 — Cart and checkout
 
-- [ ] Cart store (localStorage, `{offerId, quantity}` only): add, merge duplicate offers, set quantity, remove, clear, and a count badge in the header.
-- [ ] `POST /api/cart/quote` and a cart page showing server prices, stock warnings and an automatic quantity clamp.
-- [ ] `CheckoutService` exactly as specified in ARCHITECTURE.md: validation, idempotency, test cards, re-pricing, `FOR UPDATE SKIP LOCKED`, the order, sold keys, and the unique-violation replay.
-- [ ] `POST /api/checkout`, `GET /api/orders` and `GET /api/orders/{id}`.
-- [ ] Checkout page: order summary and simulated card form with the test cards listed. The Idempotency-Key is generated once per checkout attempt, and the pay button is disabled while the request is in flight.
-- [ ] Clear UI for 402, 409 (cart refreshed, offer named) and 422.
-- [ ] Order confirmation page with key codes and copy buttons. The cart is cleared on success.
-- [ ] Order history list and order detail pages.
+- [x] Cart store (localStorage, `{offerId, quantity}` only): add, merge duplicate offers, set quantity, remove, clear, and a count badge in the header.
+- [x] `POST /api/cart/quote` and a cart page showing server prices, stock warnings and an automatic quantity clamp.
+- [x] `CheckoutService` exactly as specified in ARCHITECTURE.md: validation, idempotency, test cards, re-pricing, `FOR UPDATE SKIP LOCKED`, the order, sold keys, and the unique-violation replay.
+- [x] `POST /api/checkout`, `GET /api/orders` and `GET /api/orders/{id}`.
+- [x] Checkout page: order summary and simulated card form with the test cards listed. The Idempotency-Key is generated once per checkout attempt, and the pay button is disabled while the request is in flight.
+- [x] Clear UI for 402, 409 (cart refreshed, offer named) and 422.
+- [x] Order confirmation page with key codes and copy buttons. The cart is cleared on success.
+- [x] Order history list and order detail pages.
 
 **Verify:** Pest tests:
 - happy path (keys sold, order total = DB prices)
@@ -176,6 +176,56 @@ Deploying in M0 is deliberate: free-tier hosting problems (proxy, cookies, cold 
 - another user's order → 404
 
 **Concurrency test:** 20 parallel processes on an offer with 5 keys → exactly 5 orders and 15 out-of-stock results, 5 distinct sold keys and 0 available. Vitest covers the cart store. Manually: a double-click on Pay creates one order.
+
+**Verified 2026-11-15** (except the browser pass and the production check, which wait for the merge):
+- **Automated:**
+  - Pest 195/195 on the `test` branch, and Pint is clean.
+  - `CheckoutTest`:
+    - Happy path: multi-line, keys sold and linked, total from DB prices, `no-store`, oldest keys first.
+    - Tampered prices ignored.
+    - 402 leaves nothing saved and the keys available.
+    - Unknown card → 422.
+    - 409 when there aren't enough keys (named offer), including a multi-line cart whose second line is short, where the first line's keys stay free.
+    - **Sold out mid-checkout:** the quote shows stock, another buyer takes it, and checkout gets 409.
+    - 409 for an inactive offer and an unknown offer.
+    - Replay → 200 with the same order (also with a different body).
+    - The key is scoped per user.
+    - A missing or bad header → 422.
+  - `CartQuoteTest` covers every warning, `checkout_ready` and the validation dataset. `OrderTest` covers the list order, the detail with keys, and the same 404 for another user's, a missing and a non-numeric id.
+  - `CheckoutConcurrencyTest` (separate OS processes, shared start time):
+    - 20 buyers / 5 keys → 5 created and 15 `out_of_stock`.
+    - **2 buyers / the last key** → 1 and 1.
+    - 10 copies of one request → 1 order and 9 replays.
+  - `CheckoutLockingTest`: a key locked by another transaction is skipped without waiting, and 409 comes at once when all are locked.
+  - Mutation runs:
+    - Without any lock, the race test fails.
+    - With plain `FOR UPDATE`, the locking test fails on the lock wait. The race test still passes, which corrected the "Why SKIP LOCKED" text in ARCHITECTURE.md.
+  - Vitest 142/142:
+    - `cartStore`: merge, the caps, the lenient parse, blocked storage, cross-tab sync.
+    - `CartPage`: server prices, the auto-clamp, blocked lines, retry.
+    - `CheckoutPage`:
+      - Only ids, quantities and the card are sent, with a UUID key.
+      - A double click sends one request.
+      - The key is kept after a network error and renewed after a 402.
+      - 402, 422, 409 (back to the cart with the message), 401 (back to sign-in, cart kept), and redirects for an empty or unbuyable cart.
+    - Orders: copy and copy failure, the confirmation banner, 404.
+    - `OfferRow`: add to cart.
+    - `client`: `code` and `offer_id`.
+  - oxlint, `tsc -b` and the build pass.
+- **Manual, through the Vite proxy on the `dev` data (curl standing in for the browser):**
+  - Guest checkout → 401, then the demo user signs in.
+  - Declined card → 402, stock unchanged.
+  - 4242 with a tampered price → 201 at the DB price, `no-store`.
+  - The same key again → 200, and stock dropped by exactly 1.
+  - History and the detail with keys work. `/orders/abc`, a missing order and another shopper's order each return 404.
+  - Asking for more keys than in stock → 409 "…has only 5 keys left."
+- **Still to do by hand:** the cart, checkout and order pages at 375px and 1440px, and a real double-click on Pay, in a browser.
+- **Changes from the plan:**
+  - The `orders` row is inserted before keys are claimed, so duplicate requests queue on the idempotency index without holding key locks (ARCHITECTURE.md › Checkout transaction).
+  - The quote has a fifth warning, `unavailable`, for offer ids that no longer exist.
+  - 409 bodies carry `offer_id`.
+  - The optional added-to-cart modal was skipped in favour of an inline "Added · View cart" message.
+- **After the merge:** run the flow homepage → product → cart → sign in → pay → key on the live URL. The M5 production check (stay signed in after a reload) is done on the same pass.
 
 ## M7 — Homepage
 

@@ -1,17 +1,29 @@
-import { isArrayOf, isObject, isString } from './guards'
+import { isArrayOf, isNumber, isObject, isString } from './guards'
 
 export type FieldErrors = Record<string, string[]>
 
+export type ErrorDetails = {
+  /** Laravel validation errors (422, and 429 on login), keyed by field. */
+  errors?: FieldErrors
+  /** A machine-readable reason, e.g. `card_declined` or `out_of_stock` (ARCHITECTURE.md › API). */
+  code?: string
+  /** The offer a checkout 409 is about. */
+  offerId?: number
+}
+
 export class ApiError extends Error {
   readonly status: number
-  /** Laravel validation errors (422, and 429 on login), keyed by field. */
   readonly errors: FieldErrors
+  readonly code: string | undefined
+  readonly offerId: number | undefined
 
-  constructor(status: number, message: string, errors: FieldErrors = {}) {
+  constructor(status: number, message: string, details: ErrorDetails = {}) {
     super(message)
     this.name = 'ApiError'
     this.status = status
-    this.errors = errors
+    this.errors = details.errors ?? {}
+    this.code = details.code
+    this.offerId = details.offerId
   }
 }
 
@@ -107,7 +119,11 @@ async function parseResponse(response: Response): Promise<unknown> {
   }
 
   if (!response.ok) {
-    throw new ApiError(response.status, messageFrom(body) ?? `HTTP ${response.status}`, errorsFrom(body))
+    throw new ApiError(response.status, messageFrom(body) ?? `HTTP ${response.status}`, {
+      errors: errorsFrom(body),
+      code: isObject(body) && isString(body.code) ? body.code : undefined,
+      offerId: isObject(body) && isNumber(body.offer_id) ? body.offer_id : undefined,
+    })
   }
 
   return body
